@@ -1,0 +1,66 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Admin {
+  id       Int    @id @default(autoincrement())
+  email    String @unique
+  password String
+}
+
+model Student {
+  id               Int      @id @default(autoincrement())
+  name             String
+  email            String   @unique
+  password         String
+  preferredSlots   String[]
+  examDate         DateTime?
+  status           Status   @default(PENDING)
+  failures         Int      @default(0)
+  lessonsCompleted Int      @default(0)
+  createdAt        DateTime @default(now())
+
+  lessons Lesson[]  // ← back-relation to Lesson
+}
+
+model Instructor {
+  id               Int    @id @default(autoincrement())
+  name             String
+  availableSlots   String[]
+  dailyLessonCount Int    @default(0)
+
+  lessons Lesson[]  // ← back-relation to Lesson
+}
+
+model Vehicle {
+  id             Int     @id @default(autoincrement())
+  type           String
+  availableSlots String[]
+  active         Boolean @default(true)
+
+  lessons Lesson[]  // ← back-relation to Lesson
+}
+
+model Lesson {
+  id           Int      @id @default(autoincrement())
+  slot         String
+  status       Status
+  studentId    Int
+  instructorId Int
+  vehicleId    Int
+  createdAt    DateTime @default(now())
+
+  student    Student    @relation(fields: [studentId], references: [id])
+  instructor Instructor @relation(fields: [instructorId], references: [id])
+  vehicle    Vehicle    @relation(fields: [vehicleId], references: [id])
+}
+
+enum Status {
+  PENDING
+  SCHEDULED
+  COMPLETED
+}

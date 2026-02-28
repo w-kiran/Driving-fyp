@@ -1,21 +1,22 @@
 // algorithms/scheduler.ts
 
-export type Student = {
+export interface Student {
   id: number;
   name: string;
   email: string;
+  password: string;
+  preferredSlots: string[];
+  examDate: Date | null; // <-- allow null
+  status: "PENDING" | "SCHEDULED" | "COMPLETED";
   failures: number;
   lessonsCompleted: number;
-  preferredSlots: string[];
-  examDate?: Date;
-  status: "PENDING" | "SCHEDULED" | "COMPLETED";
-};
+  createdAt: Date;
+}
 
-export const priorityScheduling = (students: Student[]): Student[] => {
+export const priorityScheduling = (students: Student[]) => {
   return students.sort((a, b) => {
-    // Higher failures = higher priority
-    const scoreA = a.failures * 2;
-    const scoreB = b.failures * 2;
-    return scoreB - scoreA; // descending order
+    if (!a.examDate) return 1; // put students without examDate at the end
+    if (!b.examDate) return -1;
+    return a.examDate.getTime() - b.examDate.getTime();
   });
 };

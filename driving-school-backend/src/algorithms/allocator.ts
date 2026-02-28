@@ -1,5 +1,8 @@
 // algorithms/allocator.ts
 
+import { hasConflict } from "./conflictChecker.js";
+import { sortInstructorsByLoad } from "./fairness.js";
+
 export type Student = {
   id: number;
   name: string;
@@ -7,7 +10,7 @@ export type Student = {
   failures: number;
   lessonsCompleted: number;
   email: string;
-  examDate?: Date;
+  examDate?: Date | null;
   status: "PENDING" | "SCHEDULED" | "COMPLETED";
 };
 
@@ -31,19 +34,45 @@ export type AllocationResult = {
   vehicle: Vehicle;
 } | null;
 
+export type ExistingLesson = {
+  slot: string;
+  instructorId: number;
+  vehicleId: number;
+};
+
 export const allocate = (
   student: Student,
   instructors: Instructor[],
-  vehicles: Vehicle[]
+  vehicles: Vehicle[],
+  existingLessons: ExistingLesson[]
 ): AllocationResult => {
-  for (const slot of student.preferredSlots) {
-    const instructor = instructors.find(i => i.availableSlots.includes(slot));
-    const vehicle = vehicles.find(v => v.availableSlots.includes(slot) && v.active);
 
-    if (instructor && vehicle) {
-      return { slot, instructor, vehicle };
+  const fairInstructors = sortInstructorsByLoad(instructors);
+
+  for (const slot of student.preferredSlots) {
+
+    for (const instructor of fairInstructors) {
+
+      if (!instructor.availableSlots.includes(slot)) continue;
+
+      for (const vehicle of vehicles) {
+
+        if (!vehicle.availableSlots.includes(slot) || !vehicle.active) continue;
+
+        const conflict = hasConflict(
+          slot,
+          instructor.id,
+          vehicle.id,
+          existingLessons
+        );
+
+        if (!conflict) {
+          return { slot, instructor, vehicle };
+        }
+
+      }
     }
   }
 
-  return null; // no available slot found
+  return null;
 };

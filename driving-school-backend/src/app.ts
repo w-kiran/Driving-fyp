@@ -4,8 +4,8 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import authRoutes from "./modules/auth/auth.route.js";
 import studentRoutes from "./modules/student/student.routes.js";
-import instructorRoutes from "./modules/instructor/instructor.route.js";
-import vehicleRoutes from "./modules/vehicle/vehicle.route.js";
+import instructorRoutes from "./modules/admin/instructor/instructor.route.js";
+import vehicleRoutes from "./modules/admin/vehicle/vehicle.route.js";
 
 dotenv.config();
 

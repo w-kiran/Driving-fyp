@@ -1,67 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
-model Admin {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
+model User {
+  id       Int      @id @default(autoincrement())
+  name     String
+  email    String   @unique
   password String
+  role     Role
+  student  Student?
 }
 
 model Student {
-  id               Int      @id @default(autoincrement())
-  name             String
-  email            String   @unique
-  password         String
-  preferredSlots   String[]
-  examDate         DateTime?
-  status           Status   @default(PENDING)
-  failures         Int      @default(0)
-  lessonsCompleted Int      @default(0)
-  createdAt        DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  name      String   @default("Unknown")
+  address   String
+  dob       DateTime
+  phone     String
+  userId    Int      @unique
 
-  lessons Lesson[]  // ← back-relation to Lesson
+  bookings  Booking[]
+  lessons   Lesson[]
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Booking {
+  id               Int              @id @default(autoincrement())
+  studentId        Int
+  preferredSlot    Slot
+  preferredDate DateTime @default(now())
+  vehicleType      VehicleType
+  trainingDuration Int?            // or @default(60)
+  experienceLevel  ExperienceLevel? // or @default(BEGINNER)
+  lessonsCompleted Int              @default(0) // optional, tracking progress
+  failures         Int              @default(0) // optional, tracking failed attempts
+  examDate         DateTime?        // student exam date
+  status           Status           @default(PENDING)
+  createdAt        DateTime         @default(now())
+
+  student          Student          @relation(fields: [studentId], references: [id])
 }
 
 model Instructor {
-  id               Int    @id @default(autoincrement())
+  id               Int      @id @default(autoincrement())
   name             String
-  availableSlots   String[]
-  dailyLessonCount Int    @default(0)
+  availableSlots   Slot[]
+  dailyLessonCount Int      @default(0)
 
-  lessons Lesson[]  // ← back-relation to Lesson
+  lessons          Lesson[]
 }
 
 model Vehicle {
-  id             Int     @id @default(autoincrement())
-  type           String
-  availableSlots String[]
-  active         Boolean @default(true)
+  id             Int         @id @default(autoincrement())
+  type           VehicleType
+  availableSlots Slot[]
+  active         Boolean     @default(true)
 
-  lessons Lesson[]  // ← back-relation to Lesson
+  lessons        Lesson[]
 }
 
 model Lesson {
-  id           Int      @id @default(autoincrement())
-  slot         String
+  id           Int        @id @default(autoincrement())
+  slot         Slot
+  trainingDuration Int
   status       Status
   studentId    Int
   instructorId Int
   vehicleId    Int
-  createdAt    DateTime @default(now())
+  createdAt    DateTime   @default(now())
 
-  student    Student    @relation(fields: [studentId], references: [id])
-  instructor Instructor @relation(fields: [instructorId], references: [id])
-  vehicle    Vehicle    @relation(fields: [vehicleId], references: [id])
+  instructor   Instructor @relation(fields: [instructorId], references: [id])
+  student      Student    @relation(fields: [studentId], references: [id])
+  vehicle      Vehicle    @relation(fields: [vehicleId], references: [id])
+}
+
+enum Role {
+  ADMIN
+  STUDENT
 }
 
 enum Status {
   PENDING
   SCHEDULED
   COMPLETED
+}
+
+enum Slot {
+  MORNING
+  AFTERNOON
+  EVENING
+}
+
+enum VehicleType {
+  CAR
+  BIKE
+  SCOOTER
+}
+
+enum ExperienceLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
 }

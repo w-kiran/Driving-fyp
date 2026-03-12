@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
-import prisma from "../../config/db.js";
-import { priorityScheduling } from "../../algorithms/scheduler.js";
-import { allocate } from "../../algorithms/allocator.js";
+import prisma from "../../../config/db.js";
+import { priorityScheduling } from "../../../algorithms/scheduler.js";
+import { allocate } from "../../../algorithms/allocator.js";
 import type { Lesson, Instructor, Vehicle, Student } from "@prisma/client";
 
 export const generateSchedule = async (req: Request, res: Response) => {

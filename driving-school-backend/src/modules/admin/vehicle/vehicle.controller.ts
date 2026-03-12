@@ -1,4 +1,4 @@
-import prisma from "../../config/db.js";
+import prisma from "../../../config/db.js";
 import type { Request, Response } from "express";
 
 export const addVehicle = async (req:Request, res:Response) => {

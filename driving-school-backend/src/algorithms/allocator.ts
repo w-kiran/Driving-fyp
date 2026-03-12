@@ -5,12 +5,10 @@ import { sortInstructorsByLoad } from "./fairness.js";
 
 export type Student = {
   id: number;
-  name: string;
   preferredSlots: string[];
   failures: number;
   lessonsCompleted: number;
-  email: string;
-  examDate?: Date | null;
+  examDate: Date | null;
   status: "PENDING" | "SCHEDULED" | "COMPLETED";
 };
 

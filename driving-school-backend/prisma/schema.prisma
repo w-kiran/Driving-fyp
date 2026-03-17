@@ -33,7 +33,7 @@ model Booking {
   id               Int              @id @default(autoincrement())
   studentId        Int
   preferredSlot    Slot
-  preferredDate DateTime @default(now())
+  preferredDate    String
   vehicleType      VehicleType
   trainingDuration Int?            // or @default(60)
   experienceLevel  ExperienceLevel? // or @default(BEGINNER)

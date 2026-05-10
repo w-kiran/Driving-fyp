@@ -6,6 +6,8 @@ import authRoutes from "./modules/auth/auth.route.js";
 import studentRoutes from "./modules/student/student.routes.js";
 import instructorRoutes from "./modules/admin/instructor/instructor.route.js";
 import vehicleRoutes from "./modules/admin/vehicle/vehicle.route.js";
+import bookingRoutes from "./modules/admin/booking/booking.route.js";
+import scheduleRoutes from "./modules/admin/schedule/scheduler.route.js";
 
 dotenv.config();
 
@@ -19,10 +21,11 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Mount routes here later
 app.use("/api/auth", authRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/instructors", instructorRoutes);
 app.use("/api/vehicles", vehicleRoutes);
+app.use("/api/admin/bookings", bookingRoutes);
+app.use("/api/admin/schedule", scheduleRoutes);
 
 export default app;

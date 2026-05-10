@@ -8,9 +8,9 @@ export interface Student {
   failures: number;
   lessonsCompleted: number;
 }
-export const priorityScheduling = (students: Student[]) => {
+export const priorityScheduling = <T extends Student>(students: T[]): T[] => {
   return students.sort((a, b) => {
-    if (!a.examDate) return 1; // put students without examDate at the end
+    if (!a.examDate) return 1;
     if (!b.examDate) return -1;
     return a.examDate.getTime() - b.examDate.getTime();
   });

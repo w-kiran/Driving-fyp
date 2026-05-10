@@ -2,50 +2,98 @@ import type { Request, Response } from "express";
 import prisma from "../../../config/db.js";
 import { priorityScheduling } from "../../../algorithms/scheduler.js";
 import { allocate } from "../../../algorithms/allocator.js";
-import type { Lesson, Instructor, Vehicle, Student } from "@prisma/client";
+
+type BookingData = {
+  id: number;
+  preferredSlots: string[];
+  examDate: Date | null;
+  status: "PENDING" | "SCHEDULED" | "COMPLETED";
+  failures: number;
+  lessonsCompleted: number;
+  trainingDuration: number;
+  studentId: number;
+};
 
 export const generateSchedule = async (req: Request, res: Response) => {
   try {
-    const students: Student[] = await prisma.student.findMany({
-      where: { status: "PENDING" }
+    const bookings = await prisma.booking.findMany({
+      where: { status: "PENDING" },
+      include: { student: true }
     });
 
-    const instructors: Instructor[] = await prisma.instructor.findMany();
+    const instructors = await prisma.instructor.findMany();
 
-    const vehicles: Vehicle[] = await prisma.vehicle.findMany({
+    const instructorsForAllocation = instructors.map(i => ({
+      ...i,
+      availableSlots: i.availableSlots as string[]
+    }));
+
+    const vehicles = await prisma.vehicle.findMany({
       where: { active: true }
     });
 
-    const existingLessons: Lesson[] = await prisma.lesson.findMany({
-      where: { status: "SCHEDULED" }
+    const vehiclesForAllocation = vehicles.map(v => ({
+      ...v,
+      availableSlots: v.availableSlots as string[]
+    }));
+
+    const existingLessons = await prisma.lesson.findMany({
+      include: { vehicle: true }
     });
 
-    const orderedStudents = priorityScheduling(students);
+    const lessonsForAllocation = existingLessons.map(l => ({
+      slot: l.slot,
+      instructorId: l.instructorId,
+      vehicleId: l.vehicleId
+    }));
 
-    for (const student of orderedStudents) {
+    const orderedBookings: BookingData[] = priorityScheduling(bookings.map(b => ({
+      id: b.id,
+      preferredSlots: [b.preferredSlot as string],
+      examDate: b.preferredDate ? new Date(b.preferredDate) : null,
+      status: b.status as "PENDING" | "SCHEDULED" | "COMPLETED",
+      failures: b.failures ?? 0,
+      lessonsCompleted: b.lessonsCompleted ?? 0,
+      trainingDuration: b.trainingDuration ?? 60,
+      studentId: b.studentId
+    })));
+
+    let scheduled = 0;
+    let failed = 0;
+
+    for (const booking of orderedBookings) {
       const allocation = allocate(
-        student,
-        instructors,
-        vehicles,
-        existingLessons
+        booking,
+        instructorsForAllocation,
+        vehiclesForAllocation,
+        lessonsForAllocation
       );
 
-      if (!allocation) continue;
+      if (!allocation) {
+        failed++;
+        continue;
+      }
 
       const lesson = await prisma.lesson.create({
         data: {
-          slot: allocation.slot,
+          slot: allocation.slot as "MORNING" | "AFTERNOON" | "EVENING",
+          trainingDuration: booking.trainingDuration,
           status: "SCHEDULED",
-          studentId: student.id,
+          studentId: booking.studentId,
           instructorId: allocation.instructor.id,
           vehicleId: allocation.vehicle.id
-        }
+        },
+        include: { vehicle: true }
       });
 
-      existingLessons.push(lesson);
+      lessonsForAllocation.push({
+        slot: lesson.slot,
+        instructorId: lesson.instructorId,
+        vehicleId: lesson.vehicleId
+      });
 
-      await prisma.student.update({
-        where: { id: student.id },
+      await prisma.booking.update({
+        where: { id: booking.id },
         data: { status: "SCHEDULED" }
       });
 
@@ -55,12 +103,19 @@ export const generateSchedule = async (req: Request, res: Response) => {
           dailyLessonCount: { increment: 1 }
         }
       });
+
+      scheduled++;
     }
 
-    res.json({ message: "Schedule generated successfully" });
+    res.json({
+      message: "Schedule generated successfully",
+      scheduled,
+      failed
+    });
 
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ message: "Scheduling failed" });
   }
 };
+

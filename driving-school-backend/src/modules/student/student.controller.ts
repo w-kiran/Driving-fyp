@@ -193,3 +193,36 @@ export const cancelBooking = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const getMyLessons = async (_req: Request, res: Response) => {
+  try {
+    const authHeader = _req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ message: "Unauthorized" });
+
+    const token = authHeader.split(" ")[1];
+    if (!token) return res.status(401).json({ message: "Unauthorized" });
+
+    let payload: any;
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET!);
+    } catch {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    const student = await prisma.student.findUnique({
+      where: { userId: payload.id },
+    });
+    if (!student) return res.status(404).json({ message: "Student not found" });
+
+    const lessons = await prisma.lesson.findMany({
+      where: { studentId: student.id },
+      include: { instructor: true, vehicle: true },
+      orderBy: { createdAt: "desc" }
+    });
+
+    res.json({ lessons });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

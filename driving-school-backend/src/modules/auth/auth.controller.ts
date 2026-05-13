@@ -25,7 +25,15 @@ export const adminLogin = async (req: Request, res: Response) => {
     { expiresIn: "1d" }
   );
 
-  res.json({ token });
+  res.json({
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
+  });
 };
 
 export const studentRegister = async (req: Request, res: Response) => {
@@ -80,5 +88,11 @@ export const studentLogin = async (req: Request, res: Response) => {
 
   res.json({
     token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
   });
 };

@@ -1,0 +1,1 @@
+{"version":3,"file":"conflictChecker.d.ts","sourceRoot":"","sources":["../../../src/algorithms/conflictChecker.ts"],"names":[],"mappings":"AAAA,MAAM,MAAM,cAAc,GAAG;IAC3B,IAAI,EAAE,MAAM,CAAC;IACb,YAAY,EAAE,MAAM,CAAC;IACrB,SAAS,EAAE,MAAM,CAAC;CACnB,CAAC;AAEF,eAAO,MAAM,WAAW,GACtB,MAAM,MAAM,EACZ,cAAc,MAAM,EACpB,WAAW,MAAM,EACjB,iBAAiB,cAAc,EAAE,YAQlC,CAAC"}

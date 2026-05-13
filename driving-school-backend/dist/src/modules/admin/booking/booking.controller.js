@@ -1,0 +1,83 @@
+import prisma from "../../../config/db.js";
+export const getAllBookings = async (req, res) => {
+    try {
+        const status = req.query.status;
+        const studentId = req.query.studentId;
+        const date = req.query.date;
+        const where = {};
+        if (status)
+            where.status = status;
+        if (studentId)
+            where.studentId = parseInt(studentId);
+        if (date)
+            where.preferredDate = date;
+        const bookings = await prisma.booking.findMany({
+            where,
+            include: { student: true },
+            orderBy: { createdAt: "desc" }
+        });
+        res.json({ bookings });
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+export const getBookingById = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const booking = await prisma.booking.findUnique({
+            where: { id: parseInt(id) },
+            include: { student: true }
+        });
+        if (!booking)
+            return res.status(404).json({ message: "Booking not found" });
+        res.json({ booking });
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+export const updateBookingStatus = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const { status } = req.body;
+        if (!["PENDING", "SCHEDULED", "COMPLETED"].includes(status)) {
+            return res.status(400).json({ message: "Invalid status" });
+        }
+        const booking = await prisma.booking.findUnique({
+            where: { id: parseInt(id) }
+        });
+        if (!booking)
+            return res.status(404).json({ message: "Booking not found" });
+        const updated = await prisma.booking.update({
+            where: { id: parseInt(id) },
+            data: { status: status }
+        });
+        res.json({ message: "Booking updated", booking: updated });
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+export const deleteBooking = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const booking = await prisma.booking.findUnique({
+            where: { id: parseInt(id) }
+        });
+        if (!booking)
+            return res.status(404).json({ message: "Booking not found" });
+        await prisma.booking.delete({
+            where: { id: parseInt(id) }
+        });
+        res.json({ message: "Booking deleted" });
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+//# sourceMappingURL=booking.controller.js.map

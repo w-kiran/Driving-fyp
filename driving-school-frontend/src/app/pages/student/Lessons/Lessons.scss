@@ -1,0 +1,102 @@
+@import '../../../variables';
+
+.lessons-page {
+  .loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px;
+
+    h3 {
+      margin-bottom: 8px;
+    }
+
+    p {
+      color: $text-muted;
+      margin-bottom: 20px;
+    }
+  }
+}
+
+.lessons-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.lesson-card {
+  .lesson-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid $border-color;
+
+    .lesson-date {
+      font-size: 13px;
+      color: $text-muted;
+    }
+  }
+
+  .lesson-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 12px;
+
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      .label {
+        font-size: 11px;
+        color: $text-muted;
+        text-transform: uppercase;
+      }
+
+      .value {
+        font-weight: 500;
+        font-size: 14px;
+        text-transform: capitalize;
+      }
+    }
+  }
+
+  .lesson-notes {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid $border-color;
+
+    .label {
+      font-size: 11px;
+      color: $text-muted;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    p {
+      font-size: 13px;
+      color: $text-color;
+    }
+  }
+}
+
+@media (max-width: 1024px) {
+  .lessons-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .lessons-grid {
+    grid-template-columns: 1fr;
+  }
+}

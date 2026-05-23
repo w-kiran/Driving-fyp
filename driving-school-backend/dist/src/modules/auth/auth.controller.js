@@ -2,6 +2,15 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 const prisma = new PrismaClient();
+const COOKIE_NAME = "token";
+const setTokenCookie = (res, token) => {
+    res.cookie(COOKIE_NAME, token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 24 * 60 * 60 * 1000 // 1 day
+    });
+};
 export const adminLogin = async (req, res) => {
     const { email, password } = req.body;
     const user = await prisma.user.findUnique({
@@ -14,6 +23,7 @@ export const adminLogin = async (req, res) => {
     if (!valid)
         return res.status(400).json({ message: "Invalid password" });
     const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    setTokenCookie(res, token);
     res.json({
         token,
         user: {
@@ -61,6 +71,7 @@ export const studentLogin = async (req, res) => {
     if (!valid)
         return res.status(400).json({ message: "Invalid password" });
     const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    setTokenCookie(res, token);
     res.json({
         token,
         user: {
@@ -70,5 +81,9 @@ export const studentLogin = async (req, res) => {
             role: user.role,
         },
     });
+};
+export const logout = async (_req, res) => {
+    res.clearCookie(COOKIE_NAME);
+    res.json({ message: "Logged out successfully" });
 };
 //# sourceMappingURL=auth.controller.js.map

@@ -1,0 +1,119 @@
+import prisma from "../../../config/db.js";
+import bcrypt from "bcrypt";
+export const getAllStudents = async (req, res) => {
+    try {
+        const students = await prisma.student.findMany({
+            include: {
+                user: { select: { id: true, name: true, email: true } },
+                bookings: true,
+                _count: { select: { lessons: true } }
+            },
+            orderBy: { id: "desc" }
+        });
+        res.json({ students });
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+export const getStudentById = async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const student = await prisma.student.findUnique({
+            where: { id },
+            include: {
+                user: { select: { id: true, name: true, email: true } },
+                bookings: true,
+                lessons: { include: { instructor: true, vehicle: true } }
+            }
+        });
+        if (!student)
+            return res.status(404).json({ message: "Student not found" });
+        res.json({ student });
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+export const createStudent = async (req, res) => {
+    try {
+        const { name, email, password, phone, address, dob } = req.body;
+        const existing = await prisma.user.findUnique({ where: { email } });
+        if (existing) {
+            return res.status(400).json({ message: "Email already exists" });
+        }
+        const hashed = await bcrypt.hash(password, 10);
+        const user = await prisma.user.create({
+            data: {
+                name,
+                email,
+                password: hashed,
+                role: "STUDENT",
+                student: {
+                    create: {
+                        phone,
+                        address,
+                        dob: new Date(dob)
+                    }
+                }
+            },
+            include: { student: true }
+        });
+        res.json({ message: "Student created successfully", student: user.student });
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+export const updateStudent = async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const { name, phone, address, dob } = req.body;
+        const student = await prisma.student.findUnique({ where: { id } });
+        if (!student)
+            return res.status(404).json({ message: "Student not found" });
+        const updateData = {};
+        if (phone)
+            updateData.phone = phone;
+        if (address)
+            updateData.address = address;
+        if (dob)
+            updateData.dob = new Date(dob);
+        const [updatedStudent] = await Promise.all([
+            prisma.student.update({
+                where: { id },
+                data: updateData
+            }),
+            name ? prisma.user.update({
+                where: { id: student.userId },
+                data: { name }
+            }) : Promise.resolve(null)
+        ]);
+        res.json({ message: "Student updated successfully", student: updatedStudent });
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+export const deleteStudent = async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const student = await prisma.student.findUnique({ where: { id } });
+        if (!student)
+            return res.status(404).json({ message: "Student not found" });
+        await prisma.booking.deleteMany({ where: { studentId: id } });
+        await prisma.lesson.deleteMany({ where: { studentId: id } });
+        await prisma.student.delete({ where: { id } });
+        await prisma.user.delete({ where: { id: student.userId } });
+        res.json({ message: "Student deleted successfully" });
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+//# sourceMappingURL=student.controller.js.map

@@ -1,0 +1,123 @@
+@import '../../../variables';
+
+.instructors-page {
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+
+    h2 {
+      font-size: 24px;
+      font-weight: 600;
+    }
+  }
+
+  .add-form {
+    margin-bottom: 24px;
+
+    .form-group {
+      margin-bottom: 16px;
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid $border-color;
+        border-radius: $border-radius;
+      }
+
+      .slot-options {
+        display: flex;
+        gap: 16px;
+
+        .checkbox-label {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+        }
+      }
+    }
+  }
+
+  .instructors-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .instructor-card {
+    .instructor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+
+      h3 {
+        font-size: 18px;
+      }
+
+      .delete-btn {
+        background: none;
+        border: none;
+        color: $error-color;
+        cursor: pointer;
+        font-size: 13px;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+
+    .instructor-details {
+      .detail {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid $border-color;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .label {
+          color: $text-muted;
+          font-size: 13px;
+        }
+
+        .value {
+          font-weight: 500;
+          text-transform: capitalize;
+        }
+      }
+    }
+  }
+
+  .loading-container,
+  .empty-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+  }
+
+  .empty-state {
+    flex-direction: column;
+    text-align: center;
+
+    h3 {
+      margin-bottom: 8px;
+    }
+
+    p {
+      color: $text-muted;
+    }
+  }
+}

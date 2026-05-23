@@ -91,4 +91,48 @@ export const deleteLesson = async (req, res) => {
         res.status(500).json({ message: "Server error" });
     }
 };
+export const completeLesson = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const { passed, notes } = req.body;
+        const lesson = await prisma.lesson.findUnique({
+            where: { id: parseInt(id) },
+            include: { student: true }
+        });
+        if (!lesson)
+            return res.status(404).json({ message: "Lesson not found" });
+        if (lesson.status !== "SCHEDULED") {
+            return res.status(400).json({ message: "Only scheduled lessons can be completed" });
+        }
+        const updatedLesson = await prisma.lesson.update({
+            where: { id: parseInt(id) },
+            data: {
+                status: "COMPLETED",
+                notes: notes || null
+            },
+            include: { student: true, instructor: true, vehicle: true }
+        });
+        const booking = await prisma.booking.findFirst({
+            where: {
+                studentId: lesson.studentId,
+                status: "SCHEDULED"
+            },
+            orderBy: { createdAt: "desc" }
+        });
+        if (booking) {
+            await prisma.booking.update({
+                where: { id: booking.id },
+                data: {
+                    lessonsCompleted: { increment: passed ? 1 : 0 },
+                    failures: { increment: passed ? 0 : 1 }
+                }
+            });
+        }
+        res.json({ message: "Lesson completed", lesson: updatedLesson });
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
 //# sourceMappingURL=lesson.controller.js.map

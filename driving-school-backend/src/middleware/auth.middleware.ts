@@ -5,16 +5,21 @@ export interface AuthRequest extends Request {
   user?: any;
 }
 
-export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
+const getTokenFromRequest = (req: Request): string | undefined => {
+  // First try Authorization header
   const authHeader = req.headers.authorization;
-
-  if (!authHeader) {
-    return res.status(401).json({ message: "Unauthorized" });
+  if (authHeader) {
+    return authHeader.split(" ")[1];
   }
 
-  const token = authHeader.split(" ")[1];
+  // Fallback to cookie
+  return req.cookies?.token;
+};
 
-  if(!token) {
+export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
+  const token = getTokenFromRequest(req);
+
+  if (!token) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 

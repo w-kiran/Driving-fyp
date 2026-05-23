@@ -1,10 +1,15 @@
 import jwt from "jsonwebtoken";
-export const authenticate = (req, res, next) => {
+const getTokenFromRequest = (req) => {
+    // First try Authorization header
     const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ message: "Unauthorized" });
+    if (authHeader) {
+        return authHeader.split(" ")[1];
     }
-    const token = authHeader.split(" ")[1];
+    // Fallback to cookie
+    return req.cookies?.token;
+};
+export const authenticate = (req, res, next) => {
+    const token = getTokenFromRequest(req);
     if (!token) {
         return res.status(401).json({ message: "Unauthorized" });
     }

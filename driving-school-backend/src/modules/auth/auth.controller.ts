@@ -5,6 +5,17 @@ import type { Request, Response } from "express";
 
 const prisma = new PrismaClient();
 
+const COOKIE_NAME = "token";
+
+const setTokenCookie = (res: Response, token: string) => {
+  res.cookie(COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 24 * 60 * 60 * 1000 // 1 day
+  });
+};
+
 export const adminLogin = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
@@ -24,6 +35,8 @@ export const adminLogin = async (req: Request, res: Response) => {
     process.env.JWT_SECRET!,
     { expiresIn: "1d" }
   );
+
+  setTokenCookie(res, token);
 
   res.json({
     token,
@@ -86,6 +99,8 @@ export const studentLogin = async (req: Request, res: Response) => {
     { expiresIn: "1d" }
   );
 
+  setTokenCookie(res, token);
+
   res.json({
     token,
     user: {
@@ -95,4 +110,9 @@ export const studentLogin = async (req: Request, res: Response) => {
       role: user.role,
     },
   });
+};
+
+export const logout = async (_req: Request, res: Response) => {
+  res.clearCookie(COOKIE_NAME);
+  res.json({ message: "Logged out successfully" });
 };

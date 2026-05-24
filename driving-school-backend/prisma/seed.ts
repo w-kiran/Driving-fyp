@@ -137,6 +137,7 @@ async function main() {
   await prisma.lesson.create({
     data: {
       status: "SCHEDULED",
+      scheduledDate: "2026-06-11",
       studentId: student2.id,
       instructorId: instructor2.id,
       vehicleId: vehicle1.id,
@@ -148,6 +149,7 @@ async function main() {
   await prisma.lesson.create({
     data: {
       status: "COMPLETED",
+      scheduledDate: "2026-05-20",
       studentId: student1.id,
       instructorId: instructor1.id,
       vehicleId: vehicle2.id,

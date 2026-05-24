@@ -70,6 +70,7 @@ model Lesson {
   instructorId     Int
   vehicleId        Int
   createdAt        DateTime   @default(now())
+  scheduledDate    String     @default("")
   trainingDuration Int
   slot             Slot
   notes            String?

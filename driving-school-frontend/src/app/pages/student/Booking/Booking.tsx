@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { createBooking } from '@/store/slices/bookingSlice'
+import { SLOT_TIMES } from '@/utils/slotTimes'
 import toast from 'react-hot-toast'
 import './Booking.scss'
 
@@ -103,9 +104,9 @@ const Booking = () => {
                 onChange={handleChange}
                 className="form-select"
               >
-                <option value="MORNING">Morning (8AM - 12PM)</option>
-                <option value="AFTERNOON">Afternoon (12PM - 4PM)</option>
-                <option value="EVENING">Evening (4PM - 8PM)</option>
+                {Object.entries(SLOT_TIMES).map(([key, times]) => (
+                  <option key={key} value={key}>{key.charAt(0) + key.slice(1).toLowerCase()} ({times.start} - {times.end})</option>
+                ))}
               </select>
             </div>
           </div>

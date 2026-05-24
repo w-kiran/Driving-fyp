@@ -65,6 +65,7 @@ export interface Vehicle {
 export interface Lesson {
   id: number
   slot: Slot
+  scheduledDate: string
   trainingDuration: number
   status: LessonStatus
   studentId: number

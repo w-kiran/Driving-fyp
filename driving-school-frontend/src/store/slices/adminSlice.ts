@@ -13,6 +13,7 @@ interface AdminState {
   loading: boolean
   error: string | null
   scheduleGenerating: boolean
+  scheduleResults: ScheduleResult[]
 }
 
 const initialState: AdminState = {
@@ -26,6 +27,7 @@ const initialState: AdminState = {
   loading: false,
   error: null,
   scheduleGenerating: false,
+  scheduleResults: [],
 }
 
 export const fetchInstructors = createAsyncThunk<Instructor[], void, { rejectValue: string }>(
@@ -229,13 +231,26 @@ export const fetchDashboardStats = createAsyncThunk<DashboardStats, void, { reje
   }
 )
 
+export interface ScheduleResult {
+  bookingId: number
+  studentId: number
+  preferredDate: string
+  preferredSlot: string
+  assignedDate: string
+  assignedSlot: string
+  timeRange: string
+  shifted: boolean
+  instructorName: string
+  vehicleType: string
+}
+
 export const generateSchedule = createAsyncThunk<
-  { scheduled: number; failed: number },
+  { scheduled: number; failed: number; results: ScheduleResult[] },
   void,
   { rejectValue: string }
 >('admin/generateSchedule', async (_, { rejectWithValue }) => {
   try {
-    const response = await instance.post<{ scheduled: number; failed: number }>('/admin/schedule/generate')
+    const response = await instance.post<{ scheduled: number; failed: number; results: ScheduleResult[] }>('/admin/schedule/generate')
     return response.data
   } catch (err: unknown) {
     const error = err as { response?: { data?: { message?: string } } }
@@ -343,9 +358,11 @@ const adminSlice = createSlice({
       })
       .addCase(generateSchedule.pending, (state) => {
         state.scheduleGenerating = true
+        state.scheduleResults = []
       })
-      .addCase(generateSchedule.fulfilled, (state) => {
+      .addCase(generateSchedule.fulfilled, (state, action) => {
         state.scheduleGenerating = false
+        state.scheduleResults = action.payload.results
       })
       .addCase(generateSchedule.rejected, (state, action) => {
         state.scheduleGenerating = false

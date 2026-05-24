@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchMyLessons } from '@/store/slices/bookingSlice'
+import { getSlotTimeRange } from '@/utils/slotTimes'
 import './Lessons.scss'
 
 const Lessons = () => {
@@ -41,15 +42,15 @@ const Lessons = () => {
           <div key={lesson.id} className="lesson-card card">
             <div className="lesson-header">
               <span className={`badge badge-${lesson.status.toLowerCase()}`}>{lesson.status}</span>
-              <span className="lesson-date">
-                {new Date(lesson.createdAt).toLocaleDateString()}
-              </span>
+              {lesson.scheduledDate && (
+                <span className="lesson-date">{lesson.scheduledDate}</span>
+              )}
             </div>
 
             <div className="lesson-details">
               <div className="detail-item">
-                <span className="label">Slot</span>
-                <span className="value">{lesson.slot}</span>
+                <span className="label">Time Slot</span>
+                <span className="value">{lesson.slot} ({getSlotTimeRange(lesson.slot)})</span>
               </div>
               <div className="detail-item">
                 <span className="label">Duration</span>
@@ -57,11 +58,11 @@ const Lessons = () => {
               </div>
               <div className="detail-item">
                 <span className="label">Instructor</span>
-                <span className="value">{lesson.instructor?.name || 'Assigned'}</span>
+                <span className="value">{lesson.instructor?.name || 'To be assigned'}</span>
               </div>
               <div className="detail-item">
                 <span className="label">Vehicle</span>
-                <span className="value">{lesson.vehicle?.type || 'Assigned'}</span>
+                <span className="value">{lesson.vehicle?.type || 'To be assigned'}</span>
               </div>
             </div>
 

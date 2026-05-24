@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchLessons, updateLesson, deleteLesson, completeLesson, fetchInstructors, fetchVehicles } from '@/store/slices/adminSlice'
+import { getSlotTimeRange } from '@/utils/slotTimes'
 import toast from 'react-hot-toast'
 import { Lesson, Slot } from '@/types'
 
@@ -95,6 +96,7 @@ const Lessons = () => {
                 <th>Student</th>
                 <th>Instructor</th>
                 <th>Vehicle</th>
+                <th>Date</th>
                 <th>Slot</th>
                 <th>Duration</th>
                 <th>Status</th>
@@ -108,7 +110,8 @@ const Lessons = () => {
                   <td>{lesson.student?.user?.name || 'Student'}</td>
                   <td>{lesson.instructor?.name || 'N/A'}</td>
                   <td>{lesson.vehicle?.type || 'N/A'}</td>
-                  <td>{lesson.slot}</td>
+                  <td>{lesson.scheduledDate || '-'}</td>
+                  <td>{lesson.slot} ({getSlotTimeRange(lesson.slot)})</td>
                   <td>{lesson.trainingDuration} min</td>
                   <td>
                     <span className={`badge badge-${lesson.status.toLowerCase()}`}>

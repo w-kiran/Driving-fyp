@@ -1,17 +1,34 @@
 // algorithms/scheduler.ts
 
-export interface Student {
+export interface BookingData {
   id: number;
-  preferredSlots: string[];
+  preferredSlot: string;
+  preferredDate: string;
   examDate: Date | null;
   status: "PENDING" | "SCHEDULED" | "COMPLETED";
   failures: number;
   lessonsCompleted: number;
+  trainingDuration: number;
+  studentId: number;
 }
-export const priorityScheduling = <T extends Student>(students: T[]): T[] => {
-  return students.sort((a, b) => {
-    if (!a.examDate) return 1;
-    if (!b.examDate) return -1;
-    return a.examDate.getTime() - b.examDate.getTime();
+
+/**
+ * Priority scheduling: sort by exam date (closer = first),
+ * then by failures (more = first).
+ * This determines the ORDER in which bookings are processed —
+ * higher priority students get first pick of their preferred date+slot.
+ */
+export const priorityScheduling = <T extends BookingData>(bookings: T[]): T[] => {
+  return bookings.sort((a, b) => {
+    // Has exam date = higher priority
+    if (a.examDate && b.examDate) {
+      const diff = a.examDate.getTime() - b.examDate.getTime();
+      if (diff !== 0) return diff;
+    }
+    if (a.examDate && !b.examDate) return -1;
+    if (!a.examDate && b.examDate) return 1;
+
+    // More failures = higher priority
+    return b.failures - a.failures;
   });
 };

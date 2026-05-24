@@ -1,0 +1,19 @@
+@import '../../app/variables';
+
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+
+  &:hover { color: $primary-color; }
+
+  &.active { color: $primary-color; }
+
+  .sort-arrow {
+    font-size: 10px;
+    margin-left: 4px;
+    opacity: 0.4;
+  }
+
+  &.active .sort-arrow { opacity: 1; }
+}

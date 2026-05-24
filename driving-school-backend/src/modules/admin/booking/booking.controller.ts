@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import prisma from "../../../config/db.js";
+import { parseSortParams } from "../../../utils/sortHelper.js";
 
 export const getAllBookings = async (req: Request, res: Response) => {
   try {
@@ -12,10 +13,12 @@ export const getAllBookings = async (req: Request, res: Response) => {
     if (studentId) where.studentId = parseInt(studentId);
     if (date) where.preferredDate = date;
 
+    const orderBy = parseSortParams(req, "id", "desc");
+
     const bookings = await prisma.booking.findMany({
       where,
-      include: { student: true },
-      orderBy: { createdAt: "desc" }
+      include: { student: { include: { user: { select: { name: true, email: true } } } } },
+      orderBy
     });
 
     res.json({ bookings });

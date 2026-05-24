@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchPayments, refundPayment } from '@/store/slices/adminSlice'
+import { useSort } from '@/hooks/useSort'
+import SortableHeader from '@/components/SortableHeader/SortableHeader'
 import toast from 'react-hot-toast'
 import './Payments.scss'
 
@@ -22,6 +24,7 @@ const Payments = () => {
   }
 
   const filteredPayments = filter === 'all' ? payments : payments?.filter((p) => p.status === filter)
+  const { sortedData, sortConfig, requestSort } = useSort(filteredPayments || [], 'id', 'desc')
 
   return (
     <div className="payments-page">
@@ -42,7 +45,7 @@ const Payments = () => {
 
       {loading ? (
         <div className="loading-container"><div className="spinner" /></div>
-      ) : filteredPayments?.length === 0 ? (
+      ) : sortedData?.length === 0 ? (
         <div className="empty-state card">
           <h3>No payments found</h3>
         </div>
@@ -51,19 +54,19 @@ const Payments = () => {
           <table className="payments-table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Student</th>
-                <th>Booking</th>
-                <th>Amount</th>
-                <th>Method</th>
-                <th>Status</th>
-                <th>Transaction ID</th>
-                <th>Date</th>
+                <SortableHeader label="ID" sortKey="id" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Student" sortKey="student.user.name" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Booking" sortKey="bookingId" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Amount" sortKey="amount" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Method" sortKey="paymentMethod" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Status" sortKey="status" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Transaction ID" sortKey="transactionId" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Date" sortKey="createdAt" sortConfig={sortConfig} onSort={requestSort} />
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredPayments?.map((payment) => (
+              {sortedData?.map((payment) => (
                 <tr key={payment.id}>
                   <td>#{payment.id}</td>
                   <td>{payment.student?.user?.name || 'Student'}</td>

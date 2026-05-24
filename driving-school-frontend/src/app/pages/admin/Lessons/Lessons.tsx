@@ -3,8 +3,11 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchLessons, updateLesson, deleteLesson, completeLesson, fetchInstructors, fetchVehicles } from '@/store/slices/adminSlice'
 import { getSlotTimeRange } from '@/utils/slotTimes'
+import { useSort } from '@/hooks/useSort'
+import SortableHeader from '@/components/SortableHeader/SortableHeader'
 import toast from 'react-hot-toast'
 import { Lesson, Slot } from '@/types'
+import './Lessons.scss'
 
 const Lessons = () => {
   const dispatch = useAppDispatch()
@@ -24,9 +27,11 @@ const Lessons = () => {
     dispatch(fetchVehicles())
   }, [dispatch])
 
-  const filteredLessons = filter === 'all' 
-    ? lessons 
+  const filteredLessons = filter === 'all'
+    ? lessons
     : lessons?.filter((l) => l.status === filter)
+
+  const { sortedData, sortConfig, requestSort } = useSort(filteredLessons || [], 'id', 'desc')
 
   const handleEdit = (lesson: Lesson) => {
     setEditingLesson(lesson)
@@ -83,7 +88,7 @@ const Lessons = () => {
 
       {loading ? (
         <div className="loading-container"><div className="spinner" /></div>
-      ) : filteredLessons?.length === 0 ? (
+      ) : sortedData?.length === 0 ? (
         <div className="empty-state card">
           <h3>No lessons found</h3>
         </div>
@@ -92,19 +97,19 @@ const Lessons = () => {
           <table className="lessons-table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Student</th>
-                <th>Instructor</th>
-                <th>Vehicle</th>
-                <th>Date</th>
-                <th>Slot</th>
-                <th>Duration</th>
-                <th>Status</th>
+                <SortableHeader label="ID" sortKey="id" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Student" sortKey="student.user.name" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Instructor" sortKey="instructor.name" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Vehicle" sortKey="vehicle.type" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Date" sortKey="scheduledDate" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Slot" sortKey="slot" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Duration" sortKey="trainingDuration" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Status" sortKey="status" sortConfig={sortConfig} onSort={requestSort} />
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredLessons?.map((lesson) => (
+              {sortedData?.map((lesson) => (
                 <tr key={lesson.id}>
                   <td>#{lesson.id}</td>
                   <td>{lesson.student?.user?.name || 'Student'}</td>

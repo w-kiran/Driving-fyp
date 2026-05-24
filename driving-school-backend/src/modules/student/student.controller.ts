@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import prisma from "../../config/db.js";
 import jwt from "jsonwebtoken";
+import { parseSortParams } from "../../utils/sortHelper.js";
 
 interface BookingRequest {
   preferredSlot: "MORNING" | "AFTERNOON" | "EVENING";
@@ -134,9 +135,11 @@ export const getMyBookings = async (_req: Request, res: Response) => {
     });
     if (!student) return res.status(404).json({ message: "Student not found" });
 
+    const orderBy = parseSortParams(_req, "createdAt", "desc");
+
     const bookings = await prisma.booking.findMany({
       where: { studentId: student.id },
-      orderBy: { createdAt: "desc" }
+      orderBy
     });
 
     res.json({ bookings });
@@ -213,10 +216,12 @@ export const getMyLessons = async (_req: Request, res: Response) => {
     });
     if (!student) return res.status(404).json({ message: "Student not found" });
 
+    const orderBy = parseSortParams(_req, "createdAt", "desc");
+
     const lessons = await prisma.lesson.findMany({
       where: { studentId: student.id },
       include: { instructor: true, vehicle: true },
-      orderBy: { createdAt: "desc" }
+      orderBy
     });
 
     res.json({ lessons });

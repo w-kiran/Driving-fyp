@@ -3,6 +3,8 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchBookings, generateSchedule, fetchLessons } from '@/store/slices/adminSlice'
 import { getSlotTimeRange } from '@/utils/slotTimes'
+import { useSort } from '@/hooks/useSort'
+import SortableHeader from '@/components/SortableHeader/SortableHeader'
 import toast from 'react-hot-toast'
 import './Schedule.scss'
 
@@ -17,6 +19,9 @@ const Schedule = () => {
 
   const pendingBookings = bookings?.filter((b) => b.status === 'PENDING') || []
   const scheduledLessons = lessons?.filter((l) => l.status === 'SCHEDULED') || []
+
+  const pendingSort = useSort(pendingBookings, 'preferredDate', 'asc')
+  const resultsSort = useSort(scheduleResults, 'bookingId', 'asc')
 
   const handleGenerate = async () => {
     const result = await dispatch(generateSchedule())
@@ -67,22 +72,22 @@ const Schedule = () => {
         </div>
       </div>
 
-      {scheduleResults.length > 0 && (
+      {resultsSort.sortedData.length > 0 && (
         <div className="schedule-results card">
           <h3>Latest Scheduling Results</h3>
           <table className="bookings-table">
             <thead>
               <tr>
-                <th>Booking</th>
-                <th>Requested</th>
-                <th>Assigned</th>
-                <th>Status</th>
-                <th>Instructor</th>
-                <th>Vehicle</th>
+                <SortableHeader label="Booking" sortKey="bookingId" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
+                <SortableHeader label="Requested" sortKey="preferredDate" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
+                <SortableHeader label="Assigned" sortKey="assignedDate" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
+                <SortableHeader label="Status" sortKey="shifted" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
+                <SortableHeader label="Instructor" sortKey="instructorName" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
+                <SortableHeader label="Vehicle" sortKey="vehicleType" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
               </tr>
             </thead>
             <tbody>
-              {scheduleResults.map((r, i) => (
+              {resultsSort.sortedData.map((r, i) => (
                 <tr key={i} className={r.shifted ? 'shifted-row' : ''}>
                   <td>#{r.bookingId}</td>
                   <td>{r.preferredDate} ({getSlotTimeRange(r.preferredSlot)})</td>
@@ -103,23 +108,23 @@ const Schedule = () => {
         </div>
       )}
 
-      {pendingBookings.length > 0 && (
+      {pendingSort.sortedData.length > 0 && (
         <div className="pending-bookings card">
           <h3>Pending Bookings</h3>
           <table className="bookings-table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Preferred Date</th>
-                <th>Exam Date</th>
-                <th>Slot</th>
-                <th>Vehicle</th>
-                <th>Level</th>
-                <th>Failures</th>
+                <SortableHeader label="ID" sortKey="id" sortConfig={pendingSort.sortConfig} onSort={pendingSort.requestSort} />
+                <SortableHeader label="Preferred Date" sortKey="preferredDate" sortConfig={pendingSort.sortConfig} onSort={pendingSort.requestSort} />
+                <SortableHeader label="Exam Date" sortKey="examDate" sortConfig={pendingSort.sortConfig} onSort={pendingSort.requestSort} />
+                <SortableHeader label="Slot" sortKey="preferredSlot" sortConfig={pendingSort.sortConfig} onSort={pendingSort.requestSort} />
+                <SortableHeader label="Vehicle" sortKey="vehicleType" sortConfig={pendingSort.sortConfig} onSort={pendingSort.requestSort} />
+                <SortableHeader label="Level" sortKey="experienceLevel" sortConfig={pendingSort.sortConfig} onSort={pendingSort.requestSort} />
+                <SortableHeader label="Failures" sortKey="failures" sortConfig={pendingSort.sortConfig} onSort={pendingSort.requestSort} />
               </tr>
             </thead>
             <tbody>
-              {pendingBookings.map((booking) => (
+              {pendingSort.sortedData.map((booking) => (
                 <tr key={booking.id}>
                   <td>#{booking.id}</td>
                   <td>{booking.preferredDate}</td>

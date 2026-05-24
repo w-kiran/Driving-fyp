@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchDashboardStats } from '@/store/slices/adminSlice'
+import { useSort } from '@/hooks/useSort'
+import SortableHeader from '@/components/SortableHeader/SortableHeader'
 import './Dashboard.scss'
 
 const AdminDashboard = () => {
@@ -11,6 +13,9 @@ const AdminDashboard = () => {
   useEffect(() => {
     dispatch(fetchDashboardStats())
   }, [dispatch])
+
+  const instructorLoad = stats?.instructorLoad || []
+  const { sortedData, sortConfig, requestSort } = useSort(instructorLoad, 'dailyLessonCount', 'desc')
 
   if (loading || !stats) {
     return (
@@ -72,19 +77,19 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {stats.instructorLoad && stats.instructorLoad.length > 0 && (
+      {instructorLoad.length > 0 && (
         <div className="instructor-load card">
           <h3>Instructor Workload</h3>
           <table className="load-table">
             <thead>
               <tr>
-                <th>Instructor</th>
-                <th>Daily Lessons</th>
-                <th>Total Lessons</th>
+                <SortableHeader label="Instructor" sortKey="name" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Daily Lessons" sortKey="dailyLessonCount" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Total Lessons" sortKey="totalLessons" sortConfig={sortConfig} onSort={requestSort} />
               </tr>
             </thead>
             <tbody>
-              {stats.instructorLoad.map((instructor) => (
+              {sortedData.map((instructor) => (
                 <tr key={instructor.id}>
                   <td>{instructor.name}</td>
                   <td>{instructor.dailyLessonCount}</td>

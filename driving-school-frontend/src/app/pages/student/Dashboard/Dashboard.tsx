@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchMyBookings, fetchMyLessons } from '@/store/slices/bookingSlice'
+import { useSort } from '@/hooks/useSort'
+import SortableHeader from '@/components/SortableHeader/SortableHeader'
 import './Dashboard.scss'
 
 const Dashboard = () => {
@@ -17,6 +19,9 @@ const Dashboard = () => {
   const pendingBookings = bookings?.filter((b) => b.status === 'PENDING') || []
   const scheduledBookings = bookings?.filter((b) => b.status === 'SCHEDULED') || []
   const upcomingLesson = lessons?.find((l) => l.status === 'SCHEDULED')
+
+  const recentBookings = bookings?.slice(0, 5) || []
+  const { sortedData, sortConfig, requestSort } = useSort(recentBookings, 'preferredDate', 'desc')
 
   if (loading) {
     return (
@@ -68,7 +73,7 @@ const Dashboard = () => {
 
       {upcomingLesson && (
         <div className="upcoming-lesson-card card">
-          <h3>📅 Upcoming Lesson</h3>
+          <h3>Upcoming Lesson</h3>
           <div className="lesson-details">
             <div className="detail">
               <span className="label">Slot:</span>
@@ -100,20 +105,20 @@ const Dashboard = () => {
         </div>
       )}
 
-      {bookings && bookings.length > 0 && (
+      {sortedData.length > 0 && (
         <div className="recent-bookings card">
           <h3>Recent Bookings</h3>
           <table className="bookings-table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Slot</th>
-                <th>Vehicle</th>
-                <th>Status</th>
+                <SortableHeader label="Date" sortKey="preferredDate" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Slot" sortKey="preferredSlot" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Vehicle" sortKey="vehicleType" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Status" sortKey="status" sortConfig={sortConfig} onSort={requestSort} />
               </tr>
             </thead>
             <tbody>
-              {bookings.slice(0, 5).map((booking) => (
+              {sortedData.map((booking) => (
                 <tr key={booking.id}>
                   <td>{booking.preferredDate}</td>
                   <td>{booking.preferredSlot}</td>

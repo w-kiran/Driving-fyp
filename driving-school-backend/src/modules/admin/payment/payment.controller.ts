@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import prisma from "../../../config/db.js";
 import { v4 as uuidv4 } from "uuid";
+import { parseSortParams } from "../../../utils/sortHelper.js";
 
 export const createPayment = async (req: Request, res: Response) => {
   try {
@@ -42,12 +43,14 @@ export const createPayment = async (req: Request, res: Response) => {
 
 export const getAllPayments = async (req: Request, res: Response) => {
   try {
+    const orderBy = parseSortParams(req, "createdAt", "desc");
+
     const payments = await prisma.payment.findMany({
       include: {
         student: { include: { user: { select: { name: true, email: true } } } },
         booking: true
       },
-      orderBy: { createdAt: "desc" }
+      orderBy
     });
 
     res.json({ payments });

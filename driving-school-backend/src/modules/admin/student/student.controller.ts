@@ -1,16 +1,19 @@
 import type { Request, Response } from "express";
 import prisma from "../../../config/db.js";
 import bcrypt from "bcrypt";
+import { parseSortParams } from "../../../utils/sortHelper.js";
 
 export const getAllStudents = async (req: Request, res: Response) => {
   try {
+    const orderBy = parseSortParams(req, "id", "desc");
+
     const students = await prisma.student.findMany({
       include: {
         user: { select: { id: true, name: true, email: true } },
         bookings: true,
         _count: { select: { lessons: true } }
       },
-      orderBy: { id: "desc" }
+      orderBy
     });
 
     res.json({ students });

@@ -3,10 +3,33 @@ import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
+// Helper: get a random item from an array
+const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]!;
+
+// Helper: random int between min and max (inclusive)
+const randInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+// Helper: get a date N days from now as "YYYY-MM-DD" string
+const dateNDaysFromNow = (n: number): string => {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return d.toISOString().split("T")[0] ?? d.toISOString().substring(0, 10);
+};
+
+// Helper: random date between dayMin and dayMax from now
+const randomFutureDate = (dayMin: number, dayMax: number): string => {
+  return dateNDaysFromNow(randInt(dayMin, dayMax));
+};
+
+const SLOTS = ["MORNING", "AFTERNOON", "EVENING"] as const;
+const VEHICLE_TYPES = ["CAR", "BIKE", "SCOOTER"] as const;
+const EXPERIENCE_LEVELS = ["BEGINNER", "INTERMEDIATE", "ADVANCED"] as const;
+const PAYMENT_METHODS = ["CREDIT_CARD", "CASH", "ONLINE", "DEBIT_CARD"] as const;
+
 async function main() {
   console.log("Seeding database...");
 
-  // Clean existing data (order matters for FK constraints)
+  // Clean existing data
   await prisma.payment.deleteMany();
   await prisma.lesson.deleteMany();
   await prisma.booking.deleteMany();
@@ -16,229 +39,250 @@ async function main() {
   await prisma.vehicle.deleteMany();
   await prisma.user.deleteMany();
 
-  // --- Users ---
-  const adminPassword = await bcrypt.hash("admin123", 10);
   const studentPassword = await bcrypt.hash("password123", 10);
+  const adminPassword = await bcrypt.hash("admin123", 10);
 
-  const admin = await prisma.user.create({
+  // ============================================================
+  // 1. USERS + STUDENTS
+  // ============================================================
+
+  // Admin
+  await prisma.user.create({
     data: { name: "Super Admin", email: "admin@gmail.com", password: adminPassword, role: "ADMIN" },
   });
 
-  const user1 = await prisma.user.create({
-    data: { name: "John Doe", email: "john@example.com", password: studentPassword, role: "STUDENT" },
-  });
+  // Student users (30 students)
+  const studentNames = [
+    "Aarav Sharma", "Sita Thapa", "Ram Bahadur", "Gita Poudel", "Hari Prasad",
+    "Sunita Gurung", "Bikash Rai", "Anita Magar", "Deepak Tamang", "Pooja Shrestha",
+    "Kiran Lama", "Nisha Adhikari", "Sanjay Karki", "Mina Bhandari", "Rajan Joshi",
+    "Sarita Dahal", "Prakash Neupane", "Kamala Bhattarai", "Dipesh Ghimire", "Rina Khadka",
+    "Suresh Acharya", "Laxmi Subedi", "Bijay Basnet", "Sangita Maharjan", "Ashok Thapa",
+    "Srijana Sapkota", "Nabin K.C.", "Manisha Gurung", "Roshan Shrestha", "Puja Timilsina",
+  ];
 
-  const user2 = await prisma.user.create({
-    data: { name: "Jane Smith", email: "jane@example.com", password: studentPassword, role: "STUDENT" },
-  });
+  const studentUsers = [];
+  for (let i = 0; i < studentNames.length; i++) {
+    const user = await prisma.user.create({
+      data: {
+        name: studentNames[i]!,
+        email: `student${i + 1}@example.com`,
+        password: studentPassword,
+        role: "STUDENT",
+      },
+    });
+    studentUsers.push(user);
+  }
 
-  console.log("Seeded Users");
+  // Student profiles
+  const addresses = [
+    "Kathmandu", "Pokhara", "Lalitpur", "Bhaktapur", "Biratnagar",
+    "Birgunj", "Dharan", "Hetauda", "Janakpur", "Butwal",
+  ];
 
-  // --- Students ---
-  const student1 = await prisma.student.create({
-    data: {
-      name: "John Doe",
-      address: "123 Main Street, Kathmandu",
-      dob: new Date("2000-05-15"),
-      phone: "9841234567",
-      userId: user1.id,
-    },
-  });
+  const students = [];
+  for (const user of studentUsers) {
+    const student = await prisma.student.create({
+      data: {
+        name: user.name,
+        address: `${pick(addresses)}, Nepal`,
+        dob: new Date(randInt(1995, 2004), randInt(0, 11), randInt(1, 28)),
+        phone: `98${randInt(10000000, 99999999)}`,
+        userId: user.id,
+      },
+    });
+    students.push(student);
+  }
 
-  const student2 = await prisma.student.create({
-    data: {
-      name: "Jane Smith",
-      address: "456 Lakeside Road, Pokhara",
-      dob: new Date("1999-08-22"),
-      phone: "9851234567",
-      userId: user2.id,
-    },
-  });
+  console.log(`Seeded ${students.length} students`);
 
-  console.log("Seeded Students");
+  // ============================================================
+  // 2. INSTRUCTORS (3 junior, 3 intermediate, 5 senior = 11)
+  // ============================================================
 
-  // --- Instructors ---
-  const instructor1 = await prisma.instructor.create({
-    data: {
-      name: "Ram Bahadur",
-      availableSlots: ["MORNING", "AFTERNOON"],
-      dailyLessonCount: 2,
-    },
-  });
+  const juniorNames = ["Junior - Ramesh K.", "Junior - Bikash M.", "Junior - Suman T."];
+  const intermediateNames = ["Mid - Deepak S.", "Mid - Prakash N.", "Mid - Rajan J."];
+  const seniorNames = [
+    "Senior - Hari B.", "Senior - Bijay R.", "Senior - Ashok G.",
+    "Senior - Nabin A.", "Senior - Suresh D.",
+  ];
 
-  const instructor2 = await prisma.instructor.create({
-    data: {
-      name: "Sita Thapa",
-      availableSlots: ["AFTERNOON", "EVENING"],
-      dailyLessonCount: 2,
-    },
-  });
+  const instructors = [];
+  const allInstructorNames = [...juniorNames, ...intermediateNames, ...seniorNames];
 
-  console.log("Seeded Instructors");
+  for (const name of allInstructorNames) {
+    const isInSenior = seniorNames.includes(name);
+    const availableSlots = isInSenior
+      ? ["MORNING", "AFTERNOON", "EVENING"] as const
+      : pick([["MORNING", "AFTERNOON"] as const, ["AFTERNOON", "EVENING"] as const, ["MORNING", "EVENING"] as const]);
 
-  // --- Vehicles ---
-  const vehicle1 = await prisma.vehicle.create({
-    data: { type: "CAR", availableSlots: ["MORNING", "AFTERNOON"], active: true },
-  });
+    const instructor = await prisma.instructor.create({
+      data: {
+        name,
+        availableSlots: [...availableSlots],
+        dailyLessonCount: 0,
+      },
+    });
+    instructors.push(instructor);
+  }
 
-  const vehicle2 = await prisma.vehicle.create({
-    data: { type: "BIKE", availableSlots: ["MORNING", "AFTERNOON"], active: true },
-  });
+  console.log(`Seeded ${instructors.length} instructors`);
 
-  const vehicle3 = await prisma.vehicle.create({
-    data: { type: "SCOOTER", availableSlots: ["MORNING", "AFTERNOON", "EVENING"], active: false },
-  });
+  // ============================================================
+  // 3. VEHICLES (5-10 bikes, 5-10 scooters, 3-5 cars)
+  // ============================================================
 
-  console.log("Seeded Vehicles");
+  const vehicles = [];
 
-  // --- Bookings ---
-  const booking1 = await prisma.booking.create({
-    data: {
-      studentId: student1.id,
-      preferredSlot: "MORNING",
-      preferredDate: "2026-06-10",
-      vehicleType: "CAR",
-      trainingDuration: 60,
-      experienceLevel: "BEGINNER",
-      status: "PENDING",
-    },
-  });
+  // Cars (4)
+  for (let i = 1; i <= 4; i++) {
+    const v = await prisma.vehicle.create({
+      data: {
+        type: "CAR",
+        availableSlots: ["MORNING", "AFTERNOON", "EVENING"] as ("MORNING" | "AFTERNOON" | "EVENING")[],
+        active: true,
+      },
+    });
+    vehicles.push(v);
+  }
 
-  const booking2 = await prisma.booking.create({
-    data: {
-      studentId: student2.id,
-      preferredSlot: "AFTERNOON",
-      preferredDate: "2026-06-11",
-      vehicleType: "CAR",
-      trainingDuration: 90,
-      experienceLevel: "INTERMEDIATE",
-      status: "SCHEDULED",
-      examDate: new Date("2026-07-15"),
-    },
-  });
+  // Bikes (7)
+  for (let i = 1; i <= 7; i++) {
+    const v = await prisma.vehicle.create({
+      data: {
+        type: "BIKE",
+        availableSlots: pick([["MORNING", "AFTERNOON"] as const, ["AFTERNOON", "EVENING"] as const, ["MORNING", "AFTERNOON", "EVENING"] as const]) as unknown as ("MORNING" | "AFTERNOON" | "EVENING")[],
+        active: i <= 6, // 1 inactive for testing
+      },
+    });
+    vehicles.push(v);
+  }
 
-  const booking3 = await prisma.booking.create({
-    data: {
-      studentId: student1.id,
-      preferredSlot: "EVENING",
-      preferredDate: "2026-05-20",
-      vehicleType: "BIKE",
-      trainingDuration: 45,
-      experienceLevel: "ADVANCED",
-      status: "COMPLETED",
-      lessonsCompleted: 3,
-      failures: 1,
-    },
-  });
+  // Scooters (6)
+  for (let i = 1; i <= 6; i++) {
+    const v = await prisma.vehicle.create({
+      data: {
+        type: "SCOOTER",
+        availableSlots: ["MORNING", "AFTERNOON", "EVENING"] as ("MORNING" | "AFTERNOON" | "EVENING")[],
+        active: true,
+      },
+    });
+    vehicles.push(v);
+  }
 
-  console.log("Seeded Bookings");
+  console.log(`Seeded ${vehicles.length} vehicles (${vehicles.filter(v => v.type === "CAR").length} cars, ${vehicles.filter(v => v.type === "BIKE").length} bikes, ${vehicles.filter(v => v.type === "SCOOTER").length} scooters)`);
 
-  // --- Lessons ---
-  await prisma.lesson.create({
-    data: {
-      status: "SCHEDULED",
-      scheduledDate: "2026-06-11",
-      studentId: student2.id,
-      instructorId: instructor2.id,
-      vehicleId: vehicle1.id,
-      slot: "AFTERNOON",
-      trainingDuration: 90,
-    },
-  });
+  // ============================================================
+  // 4. BOOKINGS (200+ with random dates from tomorrow)
+  // ============================================================
 
-  await prisma.lesson.create({
-    data: {
-      status: "COMPLETED",
-      scheduledDate: "2026-05-20",
-      studentId: student1.id,
-      instructorId: instructor1.id,
-      vehicleId: vehicle2.id,
-      slot: "MORNING",
-      trainingDuration: 45,
-      notes: "First practical lesson - good progress on basic controls",
-    },
-  });
+  const bookings = [];
+  const totalBookings = 250;
+  const tomorrow = dateNDaysFromNow(1);
 
-  console.log("Seeded Lessons");
+  for (let i = 0; i < totalBookings; i++) {
+    const student = pick(students);
+    const vehicleType = pick([...VEHICLE_TYPES]);
+    const slot = pick([...SLOTS]);
+    const experience = pick([...EXPERIENCE_LEVELS]);
+    const duration = pick([30, 60]);
 
-  // --- Payments ---
-  await prisma.payment.create({
-    data: {
-      studentId: student1.id,
-      bookingId: booking1.id,
-      amount: 150.0,
-      currency: "USD",
-      status: "PENDING",
-      paymentMethod: "CREDIT_CARD",
-    },
-  });
+    // Heavy bias toward tomorrow: ~60% tomorrow, rest spread across next 7 days
+    const prefDate = Math.random() < 0.6 ? tomorrow : randomFutureDate(2, 7);
 
-  await prisma.payment.create({
-    data: {
-      studentId: student2.id,
-      bookingId: booking2.id,
-      amount: 200.0,
-      currency: "USD",
-      status: "COMPLETED",
-      paymentMethod: "CASH",
-      transactionId: "TXN-A1B2C3D4",
-    },
-  });
+    // Some students have exam dates (closer = higher priority)
+    const hasExam = Math.random() > 0.4; // 60% have exam dates
+    const examDate = hasExam
+      ? new Date(Date.now() + randInt(7, 30) * 24 * 60 * 60 * 1000)
+      : null;
 
-  await prisma.payment.create({
-    data: {
-      studentId: student1.id,
-      bookingId: booking3.id,
-      amount: 175.0,
-      currency: "USD",
-      status: "COMPLETED",
-      paymentMethod: "ONLINE",
-      transactionId: "TXN-E5F6G7H8",
-    },
-  });
+    const booking = await prisma.booking.create({
+      data: {
+        studentId: student.id,
+        preferredSlot: slot,
+        preferredDate: prefDate,
+        vehicleType,
+        trainingDuration: duration,
+        experienceLevel: experience,
+        examDate,
+        failures: randInt(0, 3),
+        lessonsCompleted: 0,
+        status: "PENDING",
+      },
+    });
+    bookings.push(booking);
+  }
 
-  console.log("Seeded Payments");
+  console.log(`Seeded ${bookings.length} bookings`);
 
-  // --- Notifications ---
-  await prisma.notification.create({
-    data: {
-      userId: user1.id,
-      type: "SYSTEM",
-      title: "Welcome to DriveSmart!",
-      message: "Your account has been created successfully. Start by booking your first lesson.",
-    },
-  });
+  // ============================================================
+  // 5. LESSONS (some completed, for variety)
+  // ============================================================
 
-  await prisma.notification.create({
-    data: {
-      userId: user2.id,
-      type: "PAYMENT",
-      title: "Payment Received",
-      message: "Your payment of $200.00 has been processed successfully. Transaction ID: TXN-A1B2C3D4",
-    },
-  });
+  // Create a few completed lessons from past dates
+  for (let i = 0; i < 15; i++) {
+    const student = pick(students);
+    const instructor = pick(instructors);
+    const vehicle = pick(vehicles.filter(v => v.active));
+    const slot = pick([...SLOTS]);
+    const pastDate = dateNDaysFromNow(randInt(-10, -1));
 
-  await prisma.notification.create({
-    data: {
-      userId: user1.id,
-      type: "SYSTEM",
-      title: "Booking Confirmed",
-      message: "Your booking for CAR training on 2026-06-10 has been received and is pending approval.",
-    },
-  });
+    await prisma.lesson.create({
+      data: {
+        status: "COMPLETED",
+        scheduledDate: pastDate,
+        studentId: student.id,
+        instructorId: instructor.id,
+        vehicleId: vehicle.id,
+        slot,
+        trainingDuration: pick([30, 60]),
+        notes: Math.random() > 0.5 ? "Good progress on basic controls" : null,
+      },
+    });
+  }
 
-  await prisma.notification.create({
-    data: {
-      userId: user2.id,
-      type: "SYSTEM",
-      title: "Lesson Scheduled",
-      message: "Your lesson has been scheduled with instructor Sita Thapa for the afternoon slot.",
-      read: true,
-    },
-  });
+  console.log("Seeded 15 completed lessons");
 
-  console.log("Seeded Notifications");
-  console.log("Seed completed successfully!");
+  // ============================================================
+  // 6. PAYMENTS (some for variety)
+  // ============================================================
+
+  for (let i = 0; i < 20; i++) {
+    const student = pick(students);
+    const amount = pick([100, 150, 175, 200, 250]);
+    const status = pick(["PENDING", "COMPLETED", "COMPLETED", "COMPLETED"] as const); // 75% completed
+
+    await prisma.payment.create({
+      data: {
+        studentId: student.id,
+        amount,
+        currency: "USD",
+        status: status as "PENDING" | "COMPLETED",
+        paymentMethod: pick([...PAYMENT_METHODS]),
+        transactionId: status === "COMPLETED" ? `TXN-${randInt(100000, 999999)}` : null,
+      },
+    });
+  }
+
+  console.log("Seeded 20 payments");
+
+  // ============================================================
+  // 7. NOTIFICATIONS (welcome notifications for all students)
+  // ============================================================
+
+  for (const user of studentUsers) {
+    await prisma.notification.create({
+      data: {
+        userId: user.id,
+        type: "SYSTEM",
+        title: "Welcome to DriveSmart!",
+        message: "Your account has been created. Book your first driving lesson to get started!",
+      },
+    });
+  }
+
+  console.log(`Seeded ${studentUsers.length} notifications`);
+  console.log("\nSeed completed successfully!");
 }
 
 main()

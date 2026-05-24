@@ -113,6 +113,7 @@ enum Status {
   PENDING
   SCHEDULED
   COMPLETED
+  CANCELLED
 }
 
 enum Slot {

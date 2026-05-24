@@ -184,7 +184,7 @@ export const cancelBooking = async (req: Request, res: Response) => {
 
     await prisma.booking.update({
       where: { id: parseInt(id) },
-      data: { status: "CANCELLED" as "PENDING" | "SCHEDULED" | "COMPLETED" }
+      data: { status: "CANCELLED" }
     });
 
     res.json({ message: "Booking cancelled successfully" });

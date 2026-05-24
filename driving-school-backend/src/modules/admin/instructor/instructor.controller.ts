@@ -15,3 +15,9 @@ export const getInstructors = async (req: Request, res: Response) => {
   const instructors = await prisma.instructor.findMany();
   res.json(instructors);
 };
+
+export const deleteInstructor = async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string);
+  await prisma.instructor.delete({ where: { id } });
+  res.json({ message: "Instructor deleted" });
+};

@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client";
 import type { Request, Response } from "express";
+import prisma from "../../config/db.js";
 import jwt from "jsonwebtoken";
-
-const prisma = new PrismaClient();
 
 interface BookingRequest {
   preferredSlot: "MORNING" | "AFTERNOON" | "EVENING";
@@ -45,7 +43,8 @@ export const requestNewLesson = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Missing required booking fields" });
     }
 
-    if (![30, 60].includes(trainingDuration)) {
+    const duration = Number(trainingDuration);
+    if (![30, 60].includes(duration)) {
       return res.status(400).json({ message: "Training duration must be 30 or 60 minutes" });
     }
 
@@ -99,7 +98,7 @@ export const requestNewLesson = async (req: Request, res: Response) => {
         preferredSlot: preferredSlot as "MORNING" | "AFTERNOON" | "EVENING",
         preferredDate,
         vehicleType: vehicleType as "CAR" | "BIKE" | "SCOOTER",
-        trainingDuration,
+        trainingDuration: duration,
         experienceLevel: experienceLevel as "BEGINNER" | "INTERMEDIATE" | "ADVANCED",
         lessonsCompleted,
         failures,

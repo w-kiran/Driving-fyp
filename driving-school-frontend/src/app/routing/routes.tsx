@@ -10,6 +10,7 @@ import StudentLayout from '@/app/layouts/StudentLayout'
 import StudentDashboard from '@/app/pages/student/Dashboard/Dashboard'
 import StudentBooking from '@/app/pages/student/Booking/Booking'
 import StudentLessons from '@/app/pages/student/Lessons/Lessons'
+import StudentNotifications from '@/app/pages/student/Notifications/Notifications'
 import AdminLayout from '@/app/layouts/AdminLayout'
 import AdminDashboard from '@/app/pages/admin/Dashboard/Dashboard'
 import AdminInstructors from '@/app/pages/admin/Instructors/Instructors'
@@ -18,6 +19,7 @@ import AdminSchedule from '@/app/pages/admin/Schedule/Schedule'
 import AdminBookings from '@/app/pages/admin/Bookings/Bookings'
 import AdminStudents from '@/app/pages/admin/Students/Students'
 import AdminLessons from '@/app/pages/admin/Lessons/Lessons'
+import AdminPayments from '@/app/pages/admin/Payments/Payments'
 
 // Check if user is logged in
 const useAuth = () => {
@@ -105,6 +107,16 @@ export const Routes = [
     ),
   },
   {
+    path: '/notifications',
+    element: (
+      <ProtectedRoute allowedRole="STUDENT">
+        <StudentLayout>
+          <StudentNotifications />
+        </StudentLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: '/admin',
     element: (
       <ProtectedRoute allowedRole="ADMIN">
@@ -170,6 +182,16 @@ export const Routes = [
       <ProtectedRoute allowedRole="ADMIN">
         <AdminLayout>
           <AdminLessons />
+        </AdminLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/admin/payments',
+    element: (
+      <ProtectedRoute allowedRole="ADMIN">
+        <AdminLayout>
+          <AdminPayments />
         </AdminLayout>
       </ProtectedRoute>
     ),

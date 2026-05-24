@@ -1,0 +1,57 @@
+@import '../../../variables';
+
+.notifications-page {
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    h2 { font-size: 24px; font-weight: 600; }
+    .mark-all-btn {
+      padding: 8px 16px; border: 1px solid $primary-color; background: $white; color: $primary-color; border-radius: $border-radius; font-size: 13px; cursor: pointer; transition: $transition;
+      &:hover { background: $primary-color; color: $white; }
+    }
+  }
+
+  .notification-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .notification-item {
+    padding: 16px; border: 1px solid $border-color; border-radius: $border-radius; background: $white; transition: $transition;
+    &.unread { border-left: 3px solid $primary-color; background: #f8fafc; }
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .notification-content {
+    flex: 1;
+    .notification-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      h4 { font-size: 15px; font-weight: 600; }
+      .notification-date { font-size: 12px; color: $text-muted; }
+    }
+    .notification-message { font-size: 14px; color: $text-muted; margin-bottom: 8px; }
+    .notification-type {
+      display: inline-block; padding: 2px 8px; border-radius: $border-radius; font-size: 11px; background: $bg-color; color: $text-muted; text-transform: uppercase;
+    }
+  }
+
+  .notification-actions {
+    display: flex; gap: 8px; margin-left: 16px;
+    .read-btn, .delete-btn {
+      padding: 6px 12px; border: none; border-radius: $border-radius; font-size: 12px; cursor: pointer; font-weight: 500;
+    }
+    .read-btn { background: $primary-color; color: $white; }
+    .delete-btn { background: $error-color; color: $white; }
+  }
+
+  .loading-container, .empty-state { display: flex; justify-content: center; align-items: center; min-height: 300px; }
+  .empty-state { flex-direction: column; text-align: center; h3 { margin-bottom: 8px; } }
+}

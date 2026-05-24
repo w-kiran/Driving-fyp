@@ -256,6 +256,20 @@ export const fetchPayments = createAsyncThunk<Payment[], void, { rejectValue: st
   }
 )
 
+export const refundPayment = createAsyncThunk<
+  { id: number; status: string },
+  number,
+  { rejectValue: string }
+>('admin/refundPayment', async (id, { rejectWithValue }) => {
+  try {
+    await instance.put(`/admin/payments/${id}/refund`)
+    return { id, status: 'REFUNDED' }
+  } catch (err: unknown) {
+    const error = err as { response?: { data?: { message?: string } } }
+    return rejectWithValue(error.response?.data?.message || 'Failed to refund payment')
+  }
+})
+
 const adminSlice = createSlice({
   name: 'admin',
   initialState,
@@ -339,6 +353,12 @@ const adminSlice = createSlice({
       })
       .addCase(fetchPayments.fulfilled, (state, action: PayloadAction<Payment[]>) => {
         state.payments = action.payload
+      })
+      .addCase(refundPayment.fulfilled, (state, action) => {
+        const payment = state.payments.find((p) => p.id === action.payload.id)
+        if (payment) {
+          payment.status = 'REFUNDED'
+        }
       })
   },
 })

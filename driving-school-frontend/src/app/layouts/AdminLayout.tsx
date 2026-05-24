@@ -7,6 +7,7 @@ import {
   fetchDashboardStats,
   fetchBookings,
   fetchStudents,
+  fetchPayments,
 } from '@/store/slices/adminSlice'
 import { logout } from '@/store/slices/authSlice'
 import toast from 'react-hot-toast'
@@ -24,6 +25,7 @@ const navItems = [
   { path: '/admin/students', label: 'Students', icon: '👨‍🎓' },
   { path: '/admin/instructors', label: 'Instructors', icon: '👨‍🏫' },
   { path: '/admin/vehicles', label: 'Vehicles', icon: '🚗' },
+  { path: '/admin/payments', label: 'Payments', icon: '💳' },
 ]
 
 const AdminLayout = ({ children }: LayoutProps) => {
@@ -38,6 +40,7 @@ const AdminLayout = ({ children }: LayoutProps) => {
     dispatch(fetchDashboardStats())
     dispatch(fetchBookings())
     dispatch(fetchStudents())
+    dispatch(fetchPayments())
   }, [dispatch])
 
   const handleLogout = () => {

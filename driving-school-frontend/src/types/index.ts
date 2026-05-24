@@ -19,8 +19,8 @@ export interface AuthState {
 export type Slot = 'MORNING' | 'AFTERNOON' | 'EVENING'
 export type VehicleType = 'CAR' | 'BIKE' | 'SCOOTER'
 export type ExperienceLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'
-export type BookingStatus = 'PENDING' | 'SCHEDULED' | 'COMPLETED'
-export type LessonStatus = 'PENDING' | 'SCHEDULED' | 'COMPLETED'
+export type BookingStatus = 'PENDING' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED'
+export type LessonStatus = 'PENDING' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED'
 
 export interface Student {
   id: number
@@ -116,4 +116,6 @@ export interface Payment {
   paymentMethod: string
   transactionId?: string
   createdAt: string
+  student?: Student & { user?: User }
+  booking?: Booking
 }

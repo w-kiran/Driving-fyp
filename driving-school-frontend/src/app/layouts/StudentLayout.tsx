@@ -14,6 +14,7 @@ const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: '📊' },
   { path: '/booking', label: 'Book Lesson', icon: '📅' },
   { path: '/lessons', label: 'My Lessons', icon: '🚗' },
+  { path: '/notifications', label: 'Notifications', icon: '🔔' },
 ]
 
 const StudentLayout = ({ children }: LayoutProps) => {

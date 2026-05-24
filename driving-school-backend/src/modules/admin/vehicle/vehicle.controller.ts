@@ -8,12 +8,12 @@ export const addVehicle = async (req:Request, res:Response) => {
     data: { type, availableSlots }
   });
 
-  res.json(vehicle);
+  res.json({ vehicle });
 };
 
 export const getVehicles = async (req:Request, res:Response) => {
   const vehicles = await prisma.vehicle.findMany();
-  res.json(vehicles);
+  res.json({ vehicles });
 };
 
 export const toggleVehicleActive = async (req:Request, res:Response) => {

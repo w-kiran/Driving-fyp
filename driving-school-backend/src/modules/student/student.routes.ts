@@ -3,7 +3,7 @@ import { requestNewLesson, getMyBookings, cancelBooking, getMyLessons } from "./
 
 const router = Router();
 
-router.put("/request-new-lesson", requestNewLesson);
+router.post("/request-new-lesson", requestNewLesson);
 router.get("/bookings", getMyBookings);
 router.put("/bookings/:id/cancel", cancelBooking);
 router.get("/lessons", getMyLessons);

@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { logout } from '@/store/slices/authSlice'
+import './Landing.scss'
 
 const Landing = () => {
   const dispatch = useAppDispatch()

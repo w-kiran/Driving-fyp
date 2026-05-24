@@ -8,12 +8,12 @@ export const addInstructor = async (req: Request, res: Response) => {
     data: { name, availableSlots }
   });
 
-  res.json(instructor);
+  res.json({ instructor });
 };
 
 export const getInstructors = async (req: Request, res: Response) => {
   const instructors = await prisma.instructor.findMany();
-  res.json(instructors);
+  res.json({ instructors });
 };
 
 export const deleteInstructor = async (req: Request, res: Response) => {

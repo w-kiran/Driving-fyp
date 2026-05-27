@@ -1,8 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useCallback } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchMyBookings, fetchMyLessons } from '@/store/slices/bookingSlice'
-import { useSort } from '@/hooks/useSort'
+import { useServerSort } from '@/hooks/useServerSort'
 import SortableHeader from '@/components/SortableHeader/SortableHeader'
 import './Dashboard.scss'
 
@@ -11,8 +11,17 @@ const Dashboard = () => {
   const { user } = useAppSelector((state: RootState) => state.auth)
   const { bookings, lessons, loading } = useAppSelector((state: RootState) => state.booking)
 
+  const fetchSortedBookings = useCallback(
+    (sortBy: string, sortOrder: 'asc' | 'desc') => {
+      dispatch(fetchMyBookings({ sortBy, sortOrder }))
+    },
+    [dispatch],
+  )
+
+  const { sortConfig, requestSort } = useServerSort(fetchSortedBookings, 'preferredDate', 'desc')
+
+  // Fetch lessons once on mount (not sortable)
   useEffect(() => {
-    dispatch(fetchMyBookings())
     dispatch(fetchMyLessons())
   }, [dispatch])
 
@@ -21,7 +30,6 @@ const Dashboard = () => {
   const upcomingLesson = lessons?.find((l) => l.status === 'SCHEDULED')
 
   const recentBookings = bookings?.slice(0, 5) || []
-  const { sortedData, sortConfig, requestSort } = useSort(recentBookings, 'preferredDate', 'desc')
 
   if (loading) {
     return (
@@ -105,7 +113,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      {sortedData.length > 0 && (
+      {recentBookings.length > 0 && (
         <div className="recent-bookings card">
           <h3>Recent Bookings</h3>
           <table className="bookings-table">
@@ -118,7 +126,7 @@ const Dashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedData.map((booking) => (
+              {recentBookings.map((booking) => (
                 <tr key={booking.id}>
                   <td>{booking.preferredDate}</td>
                   <td>{booking.preferredSlot}</td>

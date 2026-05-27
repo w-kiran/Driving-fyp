@@ -1,6 +1,5 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
-export default {
-  preset: 'ts-jest',
+module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.test.ts'],
@@ -8,10 +7,14 @@ export default {
   collectCoverageFrom: ['src/algorithms/**/*.ts'],
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
-      useESM: true,
+      tsconfig: {
+        module: 'commonjs',
+        moduleResolution: 'node',
+        verbatimModuleSyntax: false,
+        esModuleInterop: true,
+      },
     }],
   },
-  extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },

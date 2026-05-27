@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchLessons, updateLesson, deleteLesson, completeLesson, fetchInstructors, fetchVehicles } from '@/store/slices/adminSlice'
 import { getSlotTimeRange } from '@/utils/slotTimes'
-import { useSort } from '@/hooks/useSort'
+import { useServerSort } from '@/hooks/useServerSort'
 import SortableHeader from '@/components/SortableHeader/SortableHeader'
 import toast from 'react-hot-toast'
 import { Lesson, Slot } from '@/types'
@@ -21,17 +21,24 @@ const Lessons = () => {
     trainingDuration: 60
   })
 
+  const fetchSortedLessons = useCallback(
+    (sortBy: string, sortOrder: 'asc' | 'desc') => {
+      dispatch(fetchLessons({ sortBy, sortOrder }))
+    },
+    [dispatch],
+  )
+
+  const { sortConfig, requestSort } = useServerSort(fetchSortedLessons, 'id', 'desc')
+
+  // Fetch instructors/vehicles on mount (always needed for edit modal)
   useEffect(() => {
-    dispatch(fetchLessons())
     dispatch(fetchInstructors())
     dispatch(fetchVehicles())
   }, [dispatch])
 
-  const filteredLessons = filter === 'all'
+  const displayedLessons = filter === 'all'
     ? lessons
     : lessons?.filter((l) => l.status === filter)
-
-  const { sortedData, sortConfig, requestSort } = useSort(filteredLessons || [], 'id', 'desc')
 
   const handleEdit = (lesson: Lesson) => {
     setEditingLesson(lesson)
@@ -54,7 +61,7 @@ const Lessons = () => {
     }))
     toast.success('Lesson updated')
     setEditingLesson(null)
-    dispatch(fetchLessons())
+    dispatch(fetchLessons({ sortBy: sortConfig.key, sortOrder: sortConfig.direction }))
   }
 
   const handleDelete = async (id: number) => {
@@ -66,7 +73,7 @@ const Lessons = () => {
   const handleComplete = async (id: number, passed: boolean) => {
     await dispatch(completeLesson({ id, passed }))
     toast.success(passed ? 'Lesson marked as passed' : 'Lesson marked as failed')
-    dispatch(fetchLessons())
+    dispatch(fetchLessons({ sortBy: sortConfig.key, sortOrder: sortConfig.direction }))
   }
 
   return (
@@ -88,7 +95,7 @@ const Lessons = () => {
 
       {loading ? (
         <div className="loading-container"><div className="spinner" /></div>
-      ) : sortedData?.length === 0 ? (
+      ) : displayedLessons?.length === 0 ? (
         <div className="empty-state card">
           <h3>No lessons found</h3>
         </div>
@@ -97,6 +104,7 @@ const Lessons = () => {
           <table className="lessons-table">
             <thead>
               <tr>
+                <SortableHeader label="Priority" sortKey="id" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="ID" sortKey="id" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Student" sortKey="student.user.name" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Instructor" sortKey="instructor.name" sortConfig={sortConfig} onSort={requestSort} />
@@ -109,8 +117,21 @@ const Lessons = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedData?.map((lesson) => (
+              {displayedLessons?.map((lesson) => (
                 <tr key={lesson.id}>
+                  <td>
+                    {lesson.priorityRank ? (
+                      <span className={`priority-token priority-token--${lesson.priorityRank <= 3 ? 'high' : lesson.priorityRank <= 6 ? 'mid' : 'low'}`}>
+                        <span className="priority-token__rank">{lesson.priorityRank}</span>
+                        <span className="priority-token__label">PRIORITY</span>
+                      </span>
+                    ) : (
+                      <span className="priority-token priority-token--na">
+                        <span className="priority-token__rank">—</span>
+                        <span className="priority-token__label">N/A</span>
+                      </span>
+                    )}
+                  </td>
                   <td>#{lesson.id}</td>
                   <td>{lesson.student?.user?.name || 'Student'}</td>
                   <td>{lesson.instructor?.name || 'N/A'}</td>

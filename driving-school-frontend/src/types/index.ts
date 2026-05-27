@@ -19,6 +19,7 @@ export interface AuthState {
 export type Slot = 'MORNING' | 'AFTERNOON' | 'EVENING'
 export type VehicleType = 'CAR' | 'BIKE' | 'SCOOTER'
 export type ExperienceLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'
+export type InstructorLevel = 'JUNIOR' | 'INTERMEDIATE' | 'SENIOR'
 export type BookingStatus = 'PENDING' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED'
 export type LessonStatus = 'PENDING' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED'
 
@@ -51,6 +52,7 @@ export interface Booking {
 export interface Instructor {
   id: number
   name: string
+  instructorLevel: InstructorLevel
   availableSlots: Slot[]
   dailyLessonCount: number
 }
@@ -58,7 +60,6 @@ export interface Instructor {
 export interface Vehicle {
   id: number
   type: VehicleType
-  availableSlots: Slot[]
   active: boolean
 }
 
@@ -73,6 +74,7 @@ export interface Lesson {
   vehicleId: number
   createdAt: string
   notes?: string
+  priorityRank?: number
   instructor?: Instructor
   student?: Student
   vehicle?: Vehicle

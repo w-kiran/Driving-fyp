@@ -112,15 +112,23 @@ async function main() {
 
   for (const name of allInstructorNames) {
     const isInSenior = seniorNames.includes(name);
+    const isInJunior = juniorNames.includes(name);
     const availableSlots = isInSenior
       ? ["MORNING", "AFTERNOON", "EVENING"] as const
       : pick([["MORNING", "AFTERNOON"] as const, ["AFTERNOON", "EVENING"] as const, ["MORNING", "EVENING"] as const]);
+
+    const instructorLevel = isInSenior
+      ? "SENIOR"
+      : isInJunior
+        ? "JUNIOR"
+        : "INTERMEDIATE";
 
     const instructor = await prisma.instructor.create({
       data: {
         name,
         availableSlots: [...availableSlots],
         dailyLessonCount: 0,
+        instructorLevel: instructorLevel as "JUNIOR" | "INTERMEDIATE" | "SENIOR",
       },
     });
     instructors.push(instructor);
@@ -139,7 +147,6 @@ async function main() {
     const v = await prisma.vehicle.create({
       data: {
         type: "CAR",
-        availableSlots: ["MORNING", "AFTERNOON", "EVENING"] as ("MORNING" | "AFTERNOON" | "EVENING")[],
         active: true,
       },
     });
@@ -151,7 +158,6 @@ async function main() {
     const v = await prisma.vehicle.create({
       data: {
         type: "BIKE",
-        availableSlots: pick([["MORNING", "AFTERNOON"] as const, ["AFTERNOON", "EVENING"] as const, ["MORNING", "AFTERNOON", "EVENING"] as const]) as unknown as ("MORNING" | "AFTERNOON" | "EVENING")[],
         active: i <= 6, // 1 inactive for testing
       },
     });
@@ -163,7 +169,6 @@ async function main() {
     const v = await prisma.vehicle.create({
       data: {
         type: "SCOOTER",
-        availableSlots: ["MORNING", "AFTERNOON", "EVENING"] as ("MORNING" | "AFTERNOON" | "EVENING")[],
         active: true,
       },
     });

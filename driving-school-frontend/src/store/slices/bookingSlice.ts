@@ -41,11 +41,20 @@ export const createBooking = createAsyncThunk<
   }
 })
 
-export const fetchMyBookings = createAsyncThunk<Booking[], void, { rejectValue: string }>(
+export const fetchMyBookings = createAsyncThunk<
+  Booking[],
+  { sortBy?: string; sortOrder?: string } | undefined,
+  { rejectValue: string }
+>(
   'booking/fetchMyBookings',
-  async (_, { rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
-      const response = await instance.get<{ bookings: Booking[] }>('/students/bookings')
+      const queryParams: Record<string, string> = {}
+      if (params?.sortBy) queryParams.sortBy = params.sortBy
+      if (params?.sortOrder) queryParams.sortOrder = params.sortOrder
+      const response = await instance.get<{ bookings: Booking[] }>('/students/bookings', {
+        params: queryParams,
+      })
       return response.data.bookings
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } }
@@ -54,11 +63,20 @@ export const fetchMyBookings = createAsyncThunk<Booking[], void, { rejectValue: 
   }
 )
 
-export const fetchMyLessons = createAsyncThunk<Lesson[], void, { rejectValue: string }>(
+export const fetchMyLessons = createAsyncThunk<
+  Lesson[],
+  { sortBy?: string; sortOrder?: string } | undefined,
+  { rejectValue: string }
+>(
   'booking/fetchMyLessons',
-  async (_, { rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
-      const response = await instance.get<{ lessons: Lesson[] }>('/students/lessons')
+      const queryParams: Record<string, string> = {}
+      if (params?.sortBy) queryParams.sortBy = params.sortBy
+      if (params?.sortOrder) queryParams.sortOrder = params.sortOrder
+      const response = await instance.get<{ lessons: Lesson[] }>('/students/lessons', {
+        params: queryParams,
+      })
       return response.data.lessons
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } }

@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchBookings, updateBookingStatus } from '@/store/slices/adminSlice'
-import { useSort } from '@/hooks/useSort'
+import { useServerSort } from '@/hooks/useServerSort'
 import SortableHeader from '@/components/SortableHeader/SortableHeader'
 import toast from 'react-hot-toast'
 import './Bookings.scss'
@@ -12,13 +12,17 @@ const Bookings = () => {
   const { bookings, loading } = useAppSelector((state: RootState) => state.admin)
   const [filter, setFilter] = useState<'all' | 'PENDING' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED'>('all')
 
-  useEffect(() => {
-    dispatch(fetchBookings())
-  }, [dispatch])
+  const fetchSortedBookings = useCallback(
+    (sortBy: string, sortOrder: 'asc' | 'desc') => {
+      dispatch(fetchBookings({ sortBy, sortOrder }))
+    },
+    [dispatch],
+  )
 
-  const filteredBookings = filter === 'all' ? bookings : bookings?.filter((b) => b.status === filter)
+  const { sortConfig, requestSort } = useServerSort(fetchSortedBookings, 'id', 'desc')
 
-  const { sortedData, sortConfig, requestSort } = useSort(filteredBookings || [], 'id', 'desc')
+  const displayedBookings =
+    filter === 'all' ? bookings : bookings?.filter((b) => b.status === filter)
 
   const handleUpdateStatus = async (bookingId: number, newStatus: 'PENDING' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED') => {
     try {
@@ -51,7 +55,7 @@ const Bookings = () => {
         <div className="loading-container">
           <div className="spinner" />
         </div>
-      ) : sortedData?.length === 0 ? (
+      ) : displayedBookings?.length === 0 ? (
         <div className="empty-state card">
           <h3>No bookings found</h3>
         </div>
@@ -71,7 +75,7 @@ const Bookings = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedData?.map((booking) => (
+              {displayedBookings?.map((booking) => (
                 <tr key={booking.id}>
                   <td>#{booking.id}</td>
                   <td>{booking.student?.user?.name || 'Student'}</td>

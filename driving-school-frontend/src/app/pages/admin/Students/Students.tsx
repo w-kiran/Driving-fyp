@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchStudents, deleteStudent } from '@/store/slices/adminSlice'
-import { useSort } from '@/hooks/useSort'
+import { useServerSort } from '@/hooks/useServerSort'
 import SortableHeader from '@/components/SortableHeader/SortableHeader'
 import toast from 'react-hot-toast'
 import './Students.scss'
@@ -12,16 +12,19 @@ const Students = () => {
   const { students, loading } = useAppSelector((state: RootState) => state.admin)
   const [searchTerm, setSearchTerm] = useState('')
 
-  useEffect(() => {
-    dispatch(fetchStudents())
-  }, [dispatch])
+  const fetchSortedStudents = useCallback(
+    (sortBy: string, sortOrder: 'asc' | 'desc') => {
+      dispatch(fetchStudents({ sortBy, sortOrder }))
+    },
+    [dispatch],
+  )
 
-  const filteredStudents = students?.filter((student) =>
+  const { sortConfig, requestSort } = useServerSort(fetchSortedStudents, 'id', 'desc')
+
+  const displayedStudents = students?.filter((student) =>
     student.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || []
-
-  const { sortedData, sortConfig, requestSort } = useSort(filteredStudents, 'id', 'desc')
 
   const handleDelete = async (id: number) => {
     if (confirm('Are you sure you want to delete this student?')) {
@@ -47,7 +50,7 @@ const Students = () => {
         <div className="loading-container">
           <div className="spinner" />
         </div>
-      ) : sortedData?.length === 0 ? (
+      ) : displayedStudents?.length === 0 ? (
         <div className="empty-state card">
           <h3>No students found</h3>
         </div>
@@ -65,7 +68,7 @@ const Students = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedData?.map((student) => (
+              {displayedStudents?.map((student) => (
                 <tr key={student.id}>
                   <td>#{student.id}</td>
                   <td>{student.user?.name || student.name}</td>

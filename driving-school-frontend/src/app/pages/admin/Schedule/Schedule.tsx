@@ -20,7 +20,7 @@ const Schedule = () => {
   const pendingBookings = bookings?.filter((b) => b.status === 'PENDING') || []
   const scheduledLessons = lessons?.filter((l) => l.status === 'SCHEDULED') || []
 
-  const pendingSort = useSort(pendingBookings, 'preferredDate', 'asc')
+  const pendingSort = useSort(pendingBookings, 'id', 'asc')
   const resultsSort = useSort(scheduleResults, 'bookingId', 'asc')
 
   const handleGenerate = async () => {
@@ -74,11 +74,16 @@ const Schedule = () => {
 
       {resultsSort.sortedData.length > 0 && (
         <div className="schedule-results card">
-          <h3>Latest Scheduling Results</h3>
+          <div className="results-header">
+            <h3>Latest Scheduling Results</h3>
+          </div>
           <table className="bookings-table">
             <thead>
               <tr>
                 <SortableHeader label="Booking" sortKey="bookingId" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
+                <SortableHeader label="Exam Date" sortKey="examDate" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
+                <SortableHeader label="Failures" sortKey="failures" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
+                <SortableHeader label="Lessons" sortKey="lessonsCompleted" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
                 <SortableHeader label="Requested" sortKey="preferredDate" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
                 <SortableHeader label="Assigned" sortKey="assignedDate" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
                 <SortableHeader label="Status" sortKey="shifted" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
@@ -90,6 +95,9 @@ const Schedule = () => {
               {resultsSort.sortedData.map((r, i) => (
                 <tr key={i} className={r.shifted ? 'shifted-row' : ''}>
                   <td>#{r.bookingId}</td>
+                  <td>{r.examDate ? new Date(r.examDate).toLocaleDateString() : <span className="no-exam">None</span>}</td>
+                  <td>{r.failures}</td>
+                  <td>{r.lessonsCompleted}</td>
                   <td>{r.preferredDate} ({getSlotTimeRange(r.preferredSlot)})</td>
                   <td>{r.assignedDate} ({r.timeRange})</td>
                   <td>
@@ -110,7 +118,9 @@ const Schedule = () => {
 
       {pendingSort.sortedData.length > 0 && (
         <div className="pending-bookings card">
-          <h3>Pending Bookings</h3>
+          <div className="results-header">
+            <h3>Pending Bookings</h3>
+          </div>
           <table className="bookings-table">
             <thead>
               <tr>
@@ -128,7 +138,7 @@ const Schedule = () => {
                 <tr key={booking.id}>
                   <td>#{booking.id}</td>
                   <td>{booking.preferredDate}</td>
-                  <td>{booking.examDate ? new Date(booking.examDate).toLocaleDateString() : 'None'}</td>
+                  <td>{booking.examDate ? new Date(booking.examDate).toLocaleDateString() : <span className="no-exam">None</span>}</td>
                   <td>{booking.preferredSlot} ({getSlotTimeRange(booking.preferredSlot)})</td>
                   <td>{booking.vehicleType}</td>
                   <td>{booking.experienceLevel}</td>

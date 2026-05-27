@@ -2,10 +2,14 @@ import prisma from "../../../config/db.js";
 import type { Request, Response } from "express";
 
 export const addInstructor = async (req: Request, res: Response) => {
-  const { name, availableSlots } = req.body;
+  const { name, availableSlots, instructorLevel } = req.body;
 
   const instructor = await prisma.instructor.create({
-    data: { name, availableSlots }
+    data: { 
+      name, 
+      availableSlots,
+      instructorLevel: instructorLevel ?? "INTERMEDIATE"
+    }
   });
 
   res.json({ instructor });

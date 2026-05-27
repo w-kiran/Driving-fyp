@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
-import { fetchVehicles, createVehicle, toggleVehicleActive } from '@/store/slices/adminSlice'
+import { fetchVehicles, createVehicle, toggleVehicleActive, deleteVehicle } from '@/store/slices/adminSlice'
 import toast from 'react-hot-toast'
 import './Vehicles.scss'
 
@@ -11,7 +11,6 @@ const Vehicles = () => {
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
     type: 'CAR' as 'CAR' | 'BIKE' | 'SCOOTER',
-    availableSlots: ['MORNING', 'AFTERNOON', 'EVENING'] as string[],
   })
 
   useEffect(() => {
@@ -22,7 +21,7 @@ const Vehicles = () => {
     e.preventDefault()
     await dispatch(createVehicle(formData))
     toast.success('Vehicle added successfully')
-    setFormData({ type: 'CAR', availableSlots: ['MORNING', 'AFTERNOON', 'EVENING'] })
+    setFormData({ type: 'CAR' })
     setShowForm(false)
   }
 
@@ -31,11 +30,11 @@ const Vehicles = () => {
     toast.success('Vehicle status updated')
   }
 
-  const handleSlotChange = (slot: string) => {
-    const slots = formData.availableSlots.includes(slot)
-      ? formData.availableSlots.filter((s) => s !== slot)
-      : [...formData.availableSlots, slot]
-    setFormData({ ...formData, availableSlots: slots })
+  const handleDelete = async (id: number, type: string) => {
+    if (window.confirm(`Are you sure you want to delete the ${type} vehicle?`)) {
+      await dispatch(deleteVehicle(id))
+      toast.success('Vehicle deleted')
+    }
   }
 
   return (
@@ -62,21 +61,6 @@ const Vehicles = () => {
                 <option value="SCOOTER">Scooter</option>
               </select>
             </div>
-            <div className="form-group">
-              <label>Available Slots</label>
-              <div className="slot-options">
-                {['MORNING', 'AFTERNOON', 'EVENING'].map((slot) => (
-                  <label key={slot} className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={formData.availableSlots.includes(slot)}
-                      onChange={() => handleSlotChange(slot)}
-                    />
-                    {slot}
-                  </label>
-                ))}
-              </div>
-            </div>
             <button type="submit" className="btn btn-primary">Add Vehicle</button>
           </form>
         </div>
@@ -95,16 +79,21 @@ const Vehicles = () => {
             <div key={vehicle.id} className="vehicle-card card">
               <div className="vehicle-header">
                 <h3>{vehicle.type}</h3>
-                <button
-                  className={`toggle-btn ${vehicle.active ? 'active' : ''}`}
-                  onClick={() => handleToggle(vehicle.id)}
-                >
-                  {vehicle.active ? 'Active' : 'Inactive'}
-                </button>
-              </div>
-              <div className="vehicle-details">
-                <span className="label">Available Slots:</span>
-                <span className="value">{vehicle.availableSlots?.join(', ') || 'Not set'}</span>
+                <div className="vehicle-actions">
+                  <button
+                    className={`toggle-btn ${vehicle.active ? 'active' : ''}`}
+                    onClick={() => handleToggle(vehicle.id)}
+                  >
+                    {vehicle.active ? 'Active' : 'Inactive'}
+                  </button>
+                  <button
+                    className="delete-btn"
+                    onClick={() => handleDelete(vehicle.id, vehicle.type)}
+                    title="Delete vehicle"
+                  >
+                    🗑️
+                  </button>
+                </div>
               </div>
             </div>
           ))}

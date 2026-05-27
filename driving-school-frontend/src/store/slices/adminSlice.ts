@@ -45,7 +45,7 @@ export const fetchInstructors = createAsyncThunk<Instructor[], void, { rejectVal
 
 export const createInstructor = createAsyncThunk<
   Instructor,
-  { name: string; availableSlots: string[] },
+  { name: string; instructorLevel: string; availableSlots: string[] },
   { rejectValue: string }
 >('admin/createInstructor', async (data, { rejectWithValue }) => {
   try {
@@ -85,7 +85,7 @@ export const fetchVehicles = createAsyncThunk<Vehicle[], void, { rejectValue: st
 
 export const createVehicle = createAsyncThunk<
   Vehicle,
-  { type: 'CAR' | 'BIKE' | 'SCOOTER'; availableSlots: string[] },
+  { type: 'CAR' | 'BIKE' | 'SCOOTER' },
   { rejectValue: string }
 >('admin/createVehicle', async (data, { rejectWithValue }) => {
   try {
@@ -96,6 +96,19 @@ export const createVehicle = createAsyncThunk<
     return rejectWithValue(error.response?.data?.message || 'Failed to create vehicle')
   }
 })
+
+export const deleteVehicle = createAsyncThunk<number, number, { rejectValue: string }>(
+  'admin/deleteVehicle',
+  async (id, { rejectWithValue }) => {
+    try {
+      await instance.delete(`/vehicles/${id}`)
+      return id
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } }
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete vehicle')
+    }
+  }
+)
 
 export const toggleVehicleActive = createAsyncThunk<
   { id: number; active: boolean },
@@ -111,11 +124,20 @@ export const toggleVehicleActive = createAsyncThunk<
   }
 })
 
-export const fetchBookings = createAsyncThunk<Booking[], void, { rejectValue: string }>(
+export const fetchBookings = createAsyncThunk<
+  Booking[],
+  { sortBy?: string; sortOrder?: string } | undefined,
+  { rejectValue: string }
+>(
   'admin/fetchBookings',
-  async (_, { rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
-      const response = await instance.get<{ bookings: Booking[] }>('/admin/bookings')
+      const queryParams: Record<string, string> = {}
+      if (params?.sortBy) queryParams.sortBy = params.sortBy
+      if (params?.sortOrder) queryParams.sortOrder = params.sortOrder
+      const response = await instance.get<{ bookings: Booking[] }>('/admin/bookings', {
+        params: queryParams,
+      })
       return response.data.bookings
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } }
@@ -138,11 +160,20 @@ export const updateBookingStatus = createAsyncThunk<
   }
 })
 
-export const fetchLessons = createAsyncThunk<Lesson[], void, { rejectValue: string }>(
+export const fetchLessons = createAsyncThunk<
+  Lesson[],
+  { sortBy?: string; sortOrder?: string } | undefined,
+  { rejectValue: string }
+>(
   'admin/fetchLessons',
-  async (_, { rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
-      const response = await instance.get<{ lessons: Lesson[] }>('/admin/lessons')
+      const queryParams: Record<string, string> = {}
+      if (params?.sortBy) queryParams.sortBy = params.sortBy
+      if (params?.sortOrder) queryParams.sortOrder = params.sortOrder
+      const response = await instance.get<{ lessons: Lesson[] }>('/admin/lessons', {
+        params: queryParams,
+      })
       return response.data.lessons
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } }
@@ -192,11 +223,20 @@ export const deleteLesson = createAsyncThunk<number, number, { rejectValue: stri
   }
 )
 
-export const fetchStudents = createAsyncThunk<Student[], void, { rejectValue: string }>(
+export const fetchStudents = createAsyncThunk<
+  Student[],
+  { sortBy?: string; sortOrder?: string } | undefined,
+  { rejectValue: string }
+>(
   'admin/fetchStudents',
-  async (_, { rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
-      const response = await instance.get<{ students: Student[] }>('/admin/students')
+      const queryParams: Record<string, string> = {}
+      if (params?.sortBy) queryParams.sortBy = params.sortBy
+      if (params?.sortOrder) queryParams.sortOrder = params.sortOrder
+      const response = await instance.get<{ students: Student[] }>('/admin/students', {
+        params: queryParams,
+      })
       return response.data.students
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } }
@@ -232,8 +272,12 @@ export const fetchDashboardStats = createAsyncThunk<DashboardStats, void, { reje
 )
 
 export interface ScheduleResult {
+  priorityRank: number
   bookingId: number
   studentId: number
+  examDate: string | null
+  failures: number
+  lessonsCompleted: number
   preferredDate: string
   preferredSlot: string
   assignedDate: string
@@ -258,11 +302,20 @@ export const generateSchedule = createAsyncThunk<
   }
 })
 
-export const fetchPayments = createAsyncThunk<Payment[], void, { rejectValue: string }>(
+export const fetchPayments = createAsyncThunk<
+  Payment[],
+  { sortBy?: string; sortOrder?: string } | undefined,
+  { rejectValue: string }
+>(
   'admin/fetchPayments',
-  async (_, { rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
-      const response = await instance.get<{ payments: Payment[] }>('/admin/payments')
+      const queryParams: Record<string, string> = {}
+      if (params?.sortBy) queryParams.sortBy = params.sortBy
+      if (params?.sortOrder) queryParams.sortOrder = params.sortOrder
+      const response = await instance.get<{ payments: Payment[] }>('/admin/payments', {
+        params: queryParams,
+      })
       return response.data.payments
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } }
@@ -313,6 +366,9 @@ const adminSlice = createSlice({
       })
       .addCase(createVehicle.fulfilled, (state, action: PayloadAction<Vehicle>) => {
         state.vehicles.push(action.payload)
+      })
+      .addCase(deleteVehicle.fulfilled, (state, action: PayloadAction<number>) => {
+        state.vehicles = state.vehicles.filter((v) => v.id !== action.payload)
       })
       .addCase(toggleVehicleActive.fulfilled, (state, action) => {
         const vehicle = state.vehicles.find((v) => v.id === action.payload.id)

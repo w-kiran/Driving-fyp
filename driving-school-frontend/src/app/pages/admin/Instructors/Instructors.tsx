@@ -11,6 +11,7 @@ const Instructors = () => {
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
+    instructorLevel: 'INTERMEDIATE',
     availableSlots: ['MORNING', 'AFTERNOON', 'EVENING'] as string[],
   })
 
@@ -27,7 +28,7 @@ const Instructors = () => {
 
     await dispatch(createInstructor(formData))
     toast.success('Instructor added successfully')
-    setFormData({ name: '', availableSlots: ['MORNING', 'AFTERNOON', 'EVENING'] })
+    setFormData({ name: '', instructorLevel: 'INTERMEDIATE', availableSlots: ['MORNING', 'AFTERNOON', 'EVENING'] })
     setShowForm(false)
   }
 
@@ -66,6 +67,18 @@ const Instructors = () => {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Enter instructor name"
               />
+            </div>
+            <div className="form-group">
+              <label>Instructor Level</label>
+              <select
+                className="form-input"
+                value={formData.instructorLevel}
+                onChange={(e) => setFormData({ ...formData, instructorLevel: e.target.value })}
+              >
+                <option value="JUNIOR">Junior</option>
+                <option value="INTERMEDIATE">Intermediate</option>
+                <option value="SENIOR">Senior</option>
+              </select>
             </div>
             <div className="form-group">
               <label>Available Slots</label>
@@ -109,6 +122,12 @@ const Instructors = () => {
                 </button>
               </div>
               <div className="instructor-details">
+                <div className="detail">
+                  <span className="label">Level</span>
+                  <span className={`value level-${(instructor.instructorLevel || 'INTERMEDIATE').toLowerCase()}`}>
+                    {instructor.instructorLevel || 'Intermediate'}
+                  </span>
+                </div>
                 <div className="detail">
                   <span className="label">Daily Lessons</span>
                   <span className="value">{instructor.dailyLessonCount}</span>

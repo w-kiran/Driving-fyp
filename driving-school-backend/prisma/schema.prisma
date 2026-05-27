@@ -48,19 +48,19 @@ model Booking {
 }
 
 model Instructor {
-  id               Int      @id @default(autoincrement())
+  id               Int             @id @default(autoincrement())
   name             String
-  dailyLessonCount Int      @default(0)
+  instructorLevel  InstructorLevel @default(INTERMEDIATE)
+  dailyLessonCount Int             @default(0)
   availableSlots   Slot[]
   lessons          Lesson[]
 }
 
 model Vehicle {
-  id             Int         @id @default(autoincrement())
-  active         Boolean     @default(true)
-  type           VehicleType
-  availableSlots Slot[]
-  lessons        Lesson[]
+  id      Int         @id @default(autoincrement())
+  active  Boolean     @default(true)
+  type    VehicleType
+  lessons Lesson[]
 }
 
 model Lesson {
@@ -74,6 +74,7 @@ model Lesson {
   trainingDuration Int
   slot             Slot
   notes            String?
+  priorityRank     Int?
   instructor       Instructor @relation(fields: [instructorId], references: [id])
   student          Student    @relation(fields: [studentId], references: [id])
   vehicle          Vehicle    @relation(fields: [vehicleId], references: [id])
@@ -133,6 +134,12 @@ enum ExperienceLevel {
   BEGINNER
   INTERMEDIATE
   ADVANCED
+}
+
+enum InstructorLevel {
+  JUNIOR
+  INTERMEDIATE
+  SENIOR
 }
 
 enum PaymentStatus {

@@ -32,6 +32,69 @@
     .badge-completed { background: #dcfce7; color: #15803d; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
   }
 
+  // ─── Priority Token (shared with Schedule page) ─────────────────────────────
+  .priority-token {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 52px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    line-height: 1.2;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover {
+      transform: scale(1.08);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    &__rank {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    &__label {
+      font-size: 8px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      opacity: 0.85;
+    }
+
+    &--high {
+      background: linear-gradient(135deg, #fef3cd, #fde68a);
+      color: #78350f;
+      border: 1px solid #fcd34d;
+      box-shadow: 0 1px 4px rgba(251, 191, 36, 0.3);
+      .priority-token__rank { text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6); }
+    }
+
+    &--mid {
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+      color: #1e3a5f;
+      border: 1px solid #93c5fd;
+      box-shadow: 0 1px 4px rgba(59, 130, 246, 0.2);
+      .priority-token__rank { text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5); }
+    }
+
+    &--low {
+      background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+      color: #374151;
+      border: 1px solid #d1d5db;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      .priority-token__rank { text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5); }
+    }
+
+    &--na {
+      background: #f9fafb;
+      color: #9ca3af;
+      border: 1px dashed #d1d5db;
+      .priority-token__rank { font-size: 16px; }
+      .priority-token__label { opacity: 0.6; }
+    }
+  }
+
   .loading-container, .empty-state { display: flex; justify-content: center; align-items: center; min-height: 300px; }
   .empty-state { flex-direction: column; text-align: center; h3 { margin-bottom: 8px; } }
 }

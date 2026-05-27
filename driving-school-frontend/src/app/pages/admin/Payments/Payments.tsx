@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchPayments, refundPayment } from '@/store/slices/adminSlice'
-import { useSort } from '@/hooks/useSort'
+import { useServerSort } from '@/hooks/useServerSort'
 import SortableHeader from '@/components/SortableHeader/SortableHeader'
 import toast from 'react-hot-toast'
 import './Payments.scss'
@@ -12,9 +12,14 @@ const Payments = () => {
   const { payments, loading } = useAppSelector((state: RootState) => state.admin)
   const [filter, setFilter] = useState<'all' | 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED'>('all')
 
-  useEffect(() => {
-    dispatch(fetchPayments())
-  }, [dispatch])
+  const fetchSortedPayments = useCallback(
+    (sortBy: string, sortOrder: 'asc' | 'desc') => {
+      dispatch(fetchPayments({ sortBy, sortOrder }))
+    },
+    [dispatch],
+  )
+
+  const { sortConfig, requestSort } = useServerSort(fetchSortedPayments, 'id', 'desc')
 
   const handleRefund = async (id: number) => {
     if (confirm('Are you sure you want to refund this payment?')) {
@@ -23,8 +28,7 @@ const Payments = () => {
     }
   }
 
-  const filteredPayments = filter === 'all' ? payments : payments?.filter((p) => p.status === filter)
-  const { sortedData, sortConfig, requestSort } = useSort(filteredPayments || [], 'id', 'desc')
+  const displayedPayments = filter === 'all' ? payments : payments?.filter((p) => p.status === filter)
 
   return (
     <div className="payments-page">
@@ -45,7 +49,7 @@ const Payments = () => {
 
       {loading ? (
         <div className="loading-container"><div className="spinner" /></div>
-      ) : sortedData?.length === 0 ? (
+      ) : displayedPayments?.length === 0 ? (
         <div className="empty-state card">
           <h3>No payments found</h3>
         </div>
@@ -66,7 +70,7 @@ const Payments = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedData?.map((payment) => (
+              {displayedPayments?.map((payment) => (
                 <tr key={payment.id}>
                   <td>#{payment.id}</td>
                   <td>{payment.student?.user?.name || 'Student'}</td>

@@ -2,7 +2,8 @@ import { Router } from "express";
 import {
   addVehicle,
   getVehicles,
-  toggleVehicleActive
+  toggleVehicleActive,
+  deleteVehicle
 } from "./vehicle.controller.js";
 import { authenticate } from "../../../middleware/auth.middleware.js";
 import { isAdmin } from "../../../middleware/admin.middleware.js";
@@ -13,5 +14,6 @@ const router = Router();
 router.post("/", authenticate, isAdmin, addVehicle);
 router.get("/", authenticate, isAdmin, getVehicles);
 router.put("/:id", authenticate, isAdmin, toggleVehicleActive);
+router.delete("/:id", authenticate, isAdmin, deleteVehicle);
 
 export default router;

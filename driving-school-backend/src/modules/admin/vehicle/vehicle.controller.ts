@@ -29,7 +29,20 @@ export const toggleVehicleActive = async (req:Request, res:Response) => {
 };
 
 export const deleteVehicle = async (req:Request, res:Response) => {
-  const id = parseInt(req.params.id as string);
-  await prisma.vehicle.delete({ where: { id } });
-  res.json({ message: "Vehicle deleted" });
+  try {
+    const id = parseInt(req.params.id as string);
+
+    const vehicle = await prisma.vehicle.findUnique({ where: { id } });
+    if (!vehicle) return res.status(404).json({ message: "Vehicle not found" });
+
+    await prisma.$transaction(async (tx) => {
+      await tx.lesson.deleteMany({ where: { vehicleId: id } });
+      await tx.vehicle.delete({ where: { id } });
+    });
+
+    res.json({ message: "Vehicle deleted" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
 };

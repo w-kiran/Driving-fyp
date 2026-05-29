@@ -136,6 +136,33 @@ export const deleteNotification = createAsyncThunk<number, number, { rejectValue
   }
 )
 
+export const editBooking = createAsyncThunk<
+  Booking,
+  { id: number; data: Partial<CreateBookingPayload> },
+  { rejectValue: string }
+>('booking/edit', async ({ id, data }, { rejectWithValue }) => {
+  try {
+    const response = await instance.put<{ booking: Booking }>(`/students/bookings/${id}`, data)
+    return response.data.booking
+  } catch (err: unknown) {
+    const error = err as { response?: { data?: { message?: string } } }
+    return rejectWithValue(error.response?.data?.message || 'Failed to edit booking')
+  }
+})
+
+export const deleteBooking = createAsyncThunk<number, number, { rejectValue: string }>(
+  'booking/delete',
+  async (id, { rejectWithValue }) => {
+    try {
+      await instance.delete(`/students/bookings/${id}`)
+      return id
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } }
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete booking')
+    }
+  }
+)
+
 export const cancelBooking = createAsyncThunk<number, number, { rejectValue: string }>(
   'booking/cancel',
   async (id, { rejectWithValue }) => {
@@ -198,6 +225,15 @@ const bookingSlice = createSlice({
       })
       .addCase(fetchNotifications.fulfilled, (state, action: PayloadAction<Notification[]>) => {
         state.notifications = action.payload
+      })
+      .addCase(editBooking.fulfilled, (state, action: PayloadAction<Booking>) => {
+        const index = state.bookings.findIndex((b) => b.id === action.payload.id)
+        if (index !== -1) {
+          state.bookings[index] = action.payload
+        }
+      })
+      .addCase(deleteBooking.fulfilled, (state, action: PayloadAction<number>) => {
+        state.bookings = state.bookings.filter((b) => b.id !== action.payload)
       })
       .addCase(cancelBooking.fulfilled, (state, action: PayloadAction<number>) => {
         const index = state.bookings.findIndex((b) => b.id === action.payload)

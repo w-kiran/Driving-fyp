@@ -84,6 +84,10 @@ export const deleteBooking = async (req: Request, res: Response) => {
 
     if (!booking) return res.status(404).json({ message: "Booking not found" });
 
+    if (booking.status !== "PENDING") {
+      return res.status(400).json({ message: "Only PENDING bookings can be deleted" });
+    }
+
     await prisma.booking.delete({
       where: { id: parseInt(id) }
     });

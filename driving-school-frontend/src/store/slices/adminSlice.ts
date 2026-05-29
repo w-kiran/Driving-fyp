@@ -146,6 +146,19 @@ export const fetchBookings = createAsyncThunk<
   }
 )
 
+export const deleteBooking = createAsyncThunk<number, number, { rejectValue: string }>(
+  'admin/deleteBooking',
+  async (id, { rejectWithValue }) => {
+    try {
+      await instance.delete(`/admin/bookings/${id}`)
+      return id
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } }
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete booking')
+    }
+  }
+)
+
 export const updateBookingStatus = createAsyncThunk<
   { id: number; status: string },
   { id: number; status: string },
@@ -378,6 +391,9 @@ const adminSlice = createSlice({
       })
       .addCase(fetchBookings.fulfilled, (state, action: PayloadAction<Booking[]>) => {
         state.bookings = action.payload
+      })
+      .addCase(deleteBooking.fulfilled, (state, action: PayloadAction<number>) => {
+        state.bookings = state.bookings.filter((b) => b.id !== action.payload)
       })
       .addCase(updateBookingStatus.fulfilled, (state, action) => {
         const booking = state.bookings.find((b) => b.id === action.payload.id)

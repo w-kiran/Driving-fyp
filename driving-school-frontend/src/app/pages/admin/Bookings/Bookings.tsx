@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
-import { fetchBookings, updateBookingStatus } from '@/store/slices/adminSlice'
+import { fetchBookings, updateBookingStatus, deleteBooking } from '@/store/slices/adminSlice'
 import { useServerSort } from '@/hooks/useServerSort'
 import SortableHeader from '@/components/SortableHeader/SortableHeader'
 import type { VehicleType } from '@/types'
@@ -39,6 +39,17 @@ const Bookings = () => {
     } catch (err: unknown) {
       const errorMessage = err as { response?: { data?: { message?: string } } }
       toast.error(errorMessage?.response?.data?.message || 'Failed to update booking status')
+    }
+  }
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this booking?')) return
+    try {
+      await dispatch(deleteBooking(id)).unwrap()
+      toast.success('Booking deleted successfully!')
+    } catch (err: unknown) {
+      const errorMessage = err as string
+      toast.error(errorMessage || 'Failed to delete booking')
     }
   }
 
@@ -127,7 +138,15 @@ const Bookings = () => {
                       <option value="CANCELLED">CANCELLED</option>
                     </select>
                   </td>
-                  <td>-</td>
+                  <td>
+                  {booking.status === 'PENDING' ? (
+                    <div className="action-btns">
+                      <button className="delete-btn" onClick={() => handleDelete(booking.id)}>Delete</button>
+                    </div>
+                  ) : (
+                    <span className="no-action">-</span>
+                  )}
+                </td>
                 </tr>
               ))}
             </tbody>

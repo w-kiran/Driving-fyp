@@ -200,6 +200,151 @@ export const cancelBooking = async (req: Request, res: Response) => {
   }
 };
 
+export const editBooking = async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ message: "Unauthorized" });
+
+    const token = authHeader.split(" ")[1];
+    if (!token) return res.status(401).json({ message: "Unauthorized" });
+
+    let payload: any;
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET!);
+    } catch {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    const student = await prisma.student.findUnique({
+      where: { userId: payload.id },
+    });
+    if (!student) return res.status(404).json({ message: "Student not found" });
+
+    const id = req.params.id as string;
+    const booking = await prisma.booking.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+    if (booking.studentId !== student.id) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    if (booking.status !== "PENDING") {
+      return res.status(400).json({ message: "Only PENDING bookings can be edited" });
+    }
+
+    const {
+      preferredSlot,
+      preferredDate,
+      vehicleType,
+      trainingDuration,
+      experienceLevel,
+      examDate,
+    } = req.body;
+
+    if (preferredDate) {
+      const dateParts = preferredDate.split("-");
+      if (dateParts.length !== 3) {
+        return res.status(400).json({ message: "Invalid preferredDate format" });
+      }
+      const year = Number(dateParts[0]);
+      const month = Number(dateParts[1]);
+      const day = Number(dateParts[2]);
+      if (isNaN(year) || isNaN(month) || isNaN(day)) {
+        return res.status(400).json({ message: "Invalid preferredDate values" });
+      }
+      const dateObj = new Date(year, month - 1, day);
+      dateObj.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const maxDate = new Date();
+      maxDate.setDate(today.getDate() + 7);
+      maxDate.setHours(23, 59, 59, 999);
+      if (dateObj < today) {
+        return res.status(400).json({ message: "Preferred date cannot be before today" });
+      }
+      if (dateObj > maxDate) {
+        return res.status(400).json({ message: "Preferred date cannot be more than 7 days from today" });
+      }
+    }
+
+    if (trainingDuration) {
+      const duration = Number(trainingDuration);
+      if (![30, 60].includes(duration)) {
+        return res.status(400).json({ message: "Training duration must be 30 or 60 minutes" });
+      }
+    }
+
+    const updateData: any = {};
+    if (preferredSlot) updateData.preferredSlot = preferredSlot;
+    if (preferredDate) updateData.preferredDate = preferredDate;
+    if (vehicleType) updateData.vehicleType = vehicleType;
+    if (trainingDuration) updateData.trainingDuration = Number(trainingDuration);
+    if (experienceLevel) updateData.experienceLevel = experienceLevel;
+    if (examDate !== undefined) {
+      updateData.examDate = examDate ? new Date(examDate) : null;
+    }
+
+    const updated = await prisma.booking.update({
+      where: { id: parseInt(id) },
+      data: updateData,
+    });
+
+    res.json({ message: "Booking updated successfully", booking: updated });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const deleteBooking = async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ message: "Unauthorized" });
+
+    const token = authHeader.split(" ")[1];
+    if (!token) return res.status(401).json({ message: "Unauthorized" });
+
+    let payload: any;
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET!);
+    } catch {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    const student = await prisma.student.findUnique({
+      where: { userId: payload.id },
+    });
+    if (!student) return res.status(404).json({ message: "Student not found" });
+
+    const id = req.params.id as string;
+    const booking = await prisma.booking.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+    if (booking.studentId !== student.id) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    if (booking.status !== "PENDING") {
+      return res.status(400).json({ message: "Only PENDING bookings can be deleted" });
+    }
+
+    await prisma.booking.delete({
+      where: { id: parseInt(id) },
+    });
+
+    res.json({ message: "Booking deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const getMyLessons = async (_req: Request, res: Response) => {
   try {
     const authHeader = _req.headers.authorization;

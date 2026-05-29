@@ -57,6 +57,20 @@ export const createInstructor = createAsyncThunk<
   }
 })
 
+export const updateInstructor = createAsyncThunk<
+  Instructor,
+  { id: number; data: { name: string; instructorLevel: string; availableSlots: string[] } },
+  { rejectValue: string }
+>('admin/updateInstructor', async ({ id, data }, { rejectWithValue }) => {
+  try {
+    const response = await instance.put<{ instructor: Instructor }>(`/instructors/${id}`, data)
+    return response.data.instructor
+  } catch (err: unknown) {
+    const error = err as { response?: { data?: { message?: string } } }
+    return rejectWithValue(error.response?.data?.message || 'Failed to update instructor')
+  }
+})
+
 export const deleteInstructor = createAsyncThunk<number, number, { rejectValue: string }>(
   'admin/deleteInstructor',
   async (id, { rejectWithValue }) => {
@@ -370,6 +384,12 @@ const adminSlice = createSlice({
       })
       .addCase(createInstructor.fulfilled, (state, action: PayloadAction<Instructor>) => {
         state.instructors.push(action.payload)
+      })
+      .addCase(updateInstructor.fulfilled, (state, action: PayloadAction<Instructor>) => {
+        const index = state.instructors.findIndex((i) => i.id === action.payload.id)
+        if (index !== -1) {
+          state.instructors[index] = action.payload
+        }
       })
       .addCase(deleteInstructor.fulfilled, (state, action: PayloadAction<number>) => {
         state.instructors = state.instructors.filter((i) => i.id !== action.payload)

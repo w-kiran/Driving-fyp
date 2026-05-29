@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   addInstructor,
   getInstructors,
+  updateInstructor,
   deleteInstructor
 } from "./instructor.controller.js";
 import { authenticate } from "../../../middleware/auth.middleware.js";
@@ -12,6 +13,7 @@ const router = Router();
 // 🔒 Only admin can access
 router.post("/", authenticate, isAdmin, addInstructor);
 router.get("/", authenticate, isAdmin, getInstructors);
+router.put("/:id", authenticate, isAdmin, updateInstructor);
 router.delete("/:id", authenticate, isAdmin, deleteInstructor);
 
 export default router;

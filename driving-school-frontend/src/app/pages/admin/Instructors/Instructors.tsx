@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
-import { fetchInstructors, createInstructor, deleteInstructor } from '@/store/slices/adminSlice'
+import { fetchInstructors, createInstructor, updateInstructor, deleteInstructor } from '@/store/slices/adminSlice'
+import type { Instructor } from '@/types'
 import toast from 'react-hot-toast'
 import './Instructors.scss'
 
@@ -9,6 +10,12 @@ const Instructors = () => {
   const dispatch = useAppDispatch()
   const { instructors, loading } = useAppSelector((state: RootState) => state.admin)
   const [showForm, setShowForm] = useState(false)
+  const [editingInstructor, setEditingInstructor] = useState<Instructor | null>(null)
+  const [editForm, setEditForm] = useState({
+    name: '',
+    instructorLevel: 'INTERMEDIATE',
+    availableSlots: ['MORNING', 'AFTERNOON', 'EVENING'] as string[],
+  })
   const [formData, setFormData] = useState({
     name: '',
     instructorLevel: 'INTERMEDIATE',
@@ -44,6 +51,37 @@ const Instructors = () => {
       ? formData.availableSlots.filter((s) => s !== slot)
       : [...formData.availableSlots, slot]
     setFormData({ ...formData, availableSlots: slots })
+  }
+
+  const handleEditSlotChange = (slot: string) => {
+    const slots = editForm.availableSlots.includes(slot)
+      ? editForm.availableSlots.filter((s) => s !== slot)
+      : [...editForm.availableSlots, slot]
+    setEditForm({ ...editForm, availableSlots: slots })
+  }
+
+  const handleEdit = (instructor: Instructor) => {
+    setEditingInstructor(instructor)
+    setEditForm({
+      name: instructor.name,
+      instructorLevel: instructor.instructorLevel || 'INTERMEDIATE',
+      availableSlots: instructor.availableSlots || [],
+    })
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingInstructor) return
+    if (!editForm.name) {
+      toast.error('Please enter instructor name')
+      return
+    }
+    const result = await dispatch(updateInstructor({ id: editingInstructor.id, data: editForm }))
+    if (updateInstructor.fulfilled.match(result)) {
+      toast.success('Instructor updated successfully')
+      setEditingInstructor(null)
+    } else {
+      toast.error(result.payload as string || 'Failed to update instructor')
+    }
   }
 
   return (
@@ -117,9 +155,14 @@ const Instructors = () => {
             <div key={instructor.id} className="instructor-card card">
               <div className="instructor-header">
                 <h3>{instructor.name}</h3>
-                <button className="delete-btn" onClick={() => handleDelete(instructor.id)}>
-                  Delete
-                </button>
+                <div className="header-actions">
+                  <button className="edit-btn" onClick={() => handleEdit(instructor)}>
+                    Edit
+                  </button>
+                  <button className="delete-btn" onClick={() => handleDelete(instructor.id)}>
+                    Delete
+                  </button>
+                </div>
               </div>
               <div className="instructor-details">
                 <div className="detail">
@@ -141,6 +184,55 @@ const Instructors = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {editingInstructor && (
+        <div className="modal-overlay" onClick={() => setEditingInstructor(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Edit Instructor #{editingInstructor.id}</h3>
+            <div className="form-group">
+              <label>Name</label>
+              <input
+                type="text"
+                className="form-input"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                placeholder="Enter instructor name"
+              />
+            </div>
+            <div className="form-group">
+              <label>Instructor Level</label>
+              <select
+                className="form-input"
+                value={editForm.instructorLevel}
+                onChange={(e) => setEditForm({ ...editForm, instructorLevel: e.target.value })}
+              >
+                <option value="JUNIOR">Junior</option>
+                <option value="INTERMEDIATE">Intermediate</option>
+                <option value="SENIOR">Senior</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Available Slots</label>
+              <div className="slot-options">
+                {['MORNING', 'AFTERNOON', 'EVENING'].map((slot) => (
+                  <label key={slot} className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={editForm.availableSlots.includes(slot)}
+                      onChange={() => handleEditSlotChange(slot)}
+                    />
+                    {slot}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button className="btn btn-primary" onClick={handleSaveEdit}>Save</button>
+              <button className="btn btn-secondary" onClick={() => setEditingInstructor(null)}>Cancel</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

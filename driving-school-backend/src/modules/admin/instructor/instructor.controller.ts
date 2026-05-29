@@ -20,6 +20,31 @@ export const getInstructors = async (req: Request, res: Response) => {
   res.json({ instructors });
 };
 
+export const updateInstructor = async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id as string);
+    const { name, availableSlots, instructorLevel } = req.body;
+
+    const existing = await prisma.instructor.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ message: "Instructor not found" });
+
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (availableSlots !== undefined) updateData.availableSlots = availableSlots;
+    if (instructorLevel !== undefined) updateData.instructorLevel = instructorLevel;
+
+    const instructor = await prisma.instructor.update({
+      where: { id },
+      data: updateData,
+    });
+
+    res.json({ instructor });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const deleteInstructor = async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);

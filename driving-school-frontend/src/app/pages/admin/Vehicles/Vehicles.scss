@@ -25,11 +25,22 @@
     .vehicle-header {
       display: flex; justify-content: space-between; align-items: center;
       h3 { font-size: 18px; }
+      .edit-inline {
+        display: flex; gap: 8px; align-items: center; flex: 1;
+        .form-select { padding: 6px 10px; font-size: 14px; border: 1px solid $border-color; border-radius: $border-radius; flex: 1; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: $primary-color; color: $white; &:hover { opacity: 0.9; } }
+        .btn-secondary { background: $border-color; color: $text-color; &:hover { opacity: 0.8; } }
+      }
       .vehicle-actions {
         display: flex; gap: 8px; align-items: center;
         .toggle-btn {
           padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; border: none; cursor: pointer; background: $error-color; color: $white;
           &.active { background: $success-color; }
+        }
+        .edit-btn {
+          padding: 6px 10px; border-radius: 8px; font-size: 14px; border: none; cursor: pointer; background: rgba($primary-color, 0.1); color: $primary-color; transition: all 0.2s;
+          &:hover { background: $primary-color; color: $white; }
         }
         .delete-btn {
           padding: 6px 10px; border-radius: 8px; font-size: 14px; border: none; cursor: pointer; background: rgba($error-color, 0.1); color: $error-color; transition: all 0.2s;

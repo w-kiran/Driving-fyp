@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
-import { fetchVehicles, createVehicle, toggleVehicleActive, deleteVehicle } from '@/store/slices/adminSlice'
+import { fetchVehicles, createVehicle, updateVehicle, toggleVehicleActive, deleteVehicle } from '@/store/slices/adminSlice'
 import toast from 'react-hot-toast'
 import './Vehicles.scss'
 
@@ -12,6 +12,8 @@ const Vehicles = () => {
   const [formData, setFormData] = useState({
     type: 'CAR' as 'CAR' | 'BIKE' | 'SCOOTER',
   })
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editType, setEditType] = useState<'CAR' | 'BIKE' | 'SCOOTER'>('CAR')
 
   useEffect(() => {
     dispatch(fetchVehicles())
@@ -35,6 +37,17 @@ const Vehicles = () => {
       await dispatch(deleteVehicle(id))
       toast.success('Vehicle deleted')
     }
+  }
+
+  const handleEdit = (id: number, currentType: 'CAR' | 'BIKE' | 'SCOOTER') => {
+    setEditingId(id)
+    setEditType(currentType)
+  }
+
+  const handleEditSubmit = async (id: number) => {
+    await dispatch(updateVehicle({ id, type: editType }))
+    toast.success('Vehicle updated')
+    setEditingId(null)
   }
 
   return (
@@ -78,13 +91,40 @@ const Vehicles = () => {
           {vehicles.map((vehicle) => (
             <div key={vehicle.id} className="vehicle-card card">
               <div className="vehicle-header">
-                <h3>{vehicle.type}</h3>
+                {editingId === vehicle.id ? (
+                  <div className="edit-inline">
+                    <select
+                      className="form-select"
+                      value={editType}
+                      onChange={(e) => setEditType(e.target.value as 'CAR' | 'BIKE' | 'SCOOTER')}
+                    >
+                      <option value="CAR">Car</option>
+                      <option value="BIKE">Bike</option>
+                      <option value="SCOOTER">Scooter</option>
+                    </select>
+                    <button className="btn btn-primary btn-sm" onClick={() => handleEditSubmit(vehicle.id)}>
+                      Save
+                    </button>
+                    <button className="btn btn-secondary btn-sm" onClick={() => setEditingId(null)}>
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <h3>{vehicle.type}</h3>
+                )}
                 <div className="vehicle-actions">
                   <button
                     className={`toggle-btn ${vehicle.active ? 'active' : ''}`}
                     onClick={() => handleToggle(vehicle.id)}
                   >
                     {vehicle.active ? 'Active' : 'Inactive'}
+                  </button>
+                  <button
+                    className="edit-btn"
+                    onClick={() => handleEdit(vehicle.id, vehicle.type)}
+                    title="Edit vehicle"
+                  >
+                    ✏️
                   </button>
                   <button
                     className="delete-btn"

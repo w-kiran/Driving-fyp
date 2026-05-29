@@ -111,6 +111,20 @@ export const createVehicle = createAsyncThunk<
   }
 })
 
+export const updateVehicle = createAsyncThunk<
+  Vehicle,
+  { id: number; type: 'CAR' | 'BIKE' | 'SCOOTER' },
+  { rejectValue: string }
+>('admin/updateVehicle', async ({ id, type }, { rejectWithValue }) => {
+  try {
+    const response = await instance.put<{ vehicle: Vehicle }>(`/vehicles/${id}`, { type })
+    return response.data.vehicle
+  } catch (err: unknown) {
+    const error = err as { response?: { data?: { message?: string } } }
+    return rejectWithValue(error.response?.data?.message || 'Failed to update vehicle')
+  }
+})
+
 export const deleteVehicle = createAsyncThunk<number, number, { rejectValue: string }>(
   'admin/deleteVehicle',
   async (id, { rejectWithValue }) => {
@@ -130,7 +144,7 @@ export const toggleVehicleActive = createAsyncThunk<
   { rejectValue: string }
 >('admin/toggleVehicle', async (id, { rejectWithValue }) => {
   try {
-    const response = await instance.put<{ vehicle: Vehicle }>(`/vehicles/${id}`)
+    const response = await instance.patch<{ vehicle: Vehicle }>(`/vehicles/${id}/toggle`)
     return { id, active: response.data.vehicle.active }
   } catch (err: unknown) {
     const error = err as { response?: { data?: { message?: string } } }
@@ -399,6 +413,12 @@ const adminSlice = createSlice({
       })
       .addCase(createVehicle.fulfilled, (state, action: PayloadAction<Vehicle>) => {
         state.vehicles.push(action.payload)
+      })
+      .addCase(updateVehicle.fulfilled, (state, action: PayloadAction<Vehicle>) => {
+        const index = state.vehicles.findIndex((v) => v.id === action.payload.id)
+        if (index !== -1) {
+          state.vehicles[index] = action.payload
+        }
       })
       .addCase(deleteVehicle.fulfilled, (state, action: PayloadAction<number>) => {
         state.vehicles = state.vehicles.filter((v) => v.id !== action.payload)

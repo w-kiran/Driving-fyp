@@ -28,6 +28,25 @@ export const toggleVehicleActive = async (req:Request, res:Response) => {
   res.json(updated);
 };
 
+export const updateVehicle = async (req:Request, res:Response) => {
+  try {
+    const id = parseInt(req.params.id as string);
+    const { type } = req.body;
+
+    const vehicle = await prisma.vehicle.findUnique({ where: { id } });
+    if (!vehicle) return res.status(404).json({ message: "Vehicle not found" });
+
+    const updated = await prisma.vehicle.update({
+      where: { id },
+      data: { type }
+    });
+    res.json({ vehicle: updated });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const deleteVehicle = async (req:Request, res:Response) => {
   try {
     const id = parseInt(req.params.id as string);

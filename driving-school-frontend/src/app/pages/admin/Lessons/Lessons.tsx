@@ -6,13 +6,18 @@ import { getSlotTimeRange } from '@/utils/slotTimes'
 import { useServerSort } from '@/hooks/useServerSort'
 import SortableHeader from '@/components/SortableHeader/SortableHeader'
 import toast from 'react-hot-toast'
-import { Lesson, Slot } from '@/types'
+import { Lesson, Slot, VehicleType } from '@/types'
 import './Lessons.scss'
+
+const VEHICLE_TYPES: VehicleType[] = ['CAR', 'BIKE', 'SCOOTER']
+const VEHICLE_LABELS: Record<VehicleType, string> = { CAR: 'Car', BIKE: 'Bike', SCOOTER: 'Scooter' }
+const VEHICLE_ICONS: Record<VehicleType, string> = { CAR: '🚗', BIKE: '🏍️', SCOOTER: '🛵' }
 
 const Lessons = () => {
   const dispatch = useAppDispatch()
   const { lessons, instructors, vehicles, loading } = useAppSelector((state: RootState) => state.admin)
   const [filter, setFilter] = useState<'all' | 'SCHEDULED' | 'COMPLETED'>('all')
+  const [activeType, setActiveType] = useState<VehicleType>('CAR')
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null)
   const [editForm, setEditForm] = useState({
     slot: '',
@@ -36,9 +41,11 @@ const Lessons = () => {
     dispatch(fetchVehicles())
   }, [dispatch])
 
-  const displayedLessons = filter === 'all'
+  const filteredByStatus = filter === 'all'
     ? lessons
     : lessons?.filter((l) => l.status === filter)
+
+  const displayedLessons = filteredByStatus?.filter((l) => l.vehicle?.type === activeType)
 
   const handleEdit = (lesson: Lesson) => {
     setEditingLesson(lesson)
@@ -76,6 +83,15 @@ const Lessons = () => {
     dispatch(fetchLessons({ sortBy: sortConfig.key, sortOrder: sortConfig.direction }))
   }
 
+  const countsByType = VEHICLE_TYPES.reduce(
+    (acc, t) => {
+      const filtered = filter === 'all' ? lessons : lessons?.filter((l) => l.status === filter)
+      acc[t] = (filtered || []).filter((l) => l.vehicle?.type === t).length
+      return acc
+    },
+    {} as Record<VehicleType, number>,
+  )
+
   return (
     <div className="lessons-page">
       <div className="page-header">
@@ -93,22 +109,38 @@ const Lessons = () => {
         </div>
       </div>
 
+      {/* Vehicle Type Tabs */}
+      <div className="vehicle-tabs">
+        {VEHICLE_TYPES.map((type) => (
+          <button
+            key={type}
+            className={`vehicle-tab ${activeType === type ? 'active' : ''}`}
+            onClick={() => setActiveType(type)}
+          >
+            <span className="vehicle-tab__icon">{VEHICLE_ICONS[type]}</span>
+            <span className="vehicle-tab__label">{VEHICLE_LABELS[type]}</span>
+            {countsByType[type] > 0 && (
+              <span className="vehicle-tab__count">{countsByType[type]}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <div className="loading-container"><div className="spinner" /></div>
       ) : displayedLessons?.length === 0 ? (
         <div className="empty-state card">
-          <h3>No lessons found</h3>
+          <h3>No {VEHICLE_LABELS[activeType]} lessons found</h3>
         </div>
       ) : (
         <div className="lessons-table-container card">
           <table className="lessons-table">
             <thead>
               <tr>
-                <SortableHeader label="Priority" sortKey="id" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Priority" sortKey="priorityRank" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="ID" sortKey="id" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Student" sortKey="student.user.name" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Instructor" sortKey="instructor.name" sortConfig={sortConfig} onSort={requestSort} />
-                <SortableHeader label="Vehicle" sortKey="vehicle.type" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Date" sortKey="scheduledDate" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Slot" sortKey="slot" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Duration" sortKey="trainingDuration" sortConfig={sortConfig} onSort={requestSort} />
@@ -135,7 +167,6 @@ const Lessons = () => {
                   <td>#{lesson.id}</td>
                   <td>{lesson.student?.user?.name || 'Student'}</td>
                   <td>{lesson.instructor?.name || 'N/A'}</td>
-                  <td>{lesson.vehicle?.type || 'N/A'}</td>
                   <td>{lesson.scheduledDate || '-'}</td>
                   <td>{lesson.slot} ({getSlotTimeRange(lesson.slot)})</td>
                   <td>{lesson.trainingDuration} min</td>

@@ -7,11 +7,13 @@ export const getAllBookings = async (req: Request, res: Response) => {
     const status = req.query.status as string | undefined;
     const studentId = req.query.studentId as string | undefined;
     const date = req.query.date as string | undefined;
+    const vehicleType = req.query.vehicleType as string | undefined;
 
     const where: any = {};
     if (status) where.status = status;
     if (studentId) where.studentId = parseInt(studentId);
     if (date) where.preferredDate = date;
+    if (vehicleType) where.vehicleType = vehicleType;
 
     const orderBy = parseSortParams(req, "id", "desc");
 

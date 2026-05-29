@@ -139,6 +139,7 @@ export const generateSchedule = async (req: Request, res: Response) => {
     // 4. In-memory scheduling: collect all operations, no DB calls inside the loop
     let scheduled = 0;
     let failed = 0;
+    const priorityRankByType = new Map<string, number>();
     const results: Array<{
       priorityRank: number;
       bookingId: number;
@@ -203,7 +204,11 @@ export const generateSchedule = async (req: Request, res: Response) => {
       const inst = instructorsForAllocation.find(i => i.id === allocation.instructor.id);
       if (inst) inst.dailyLessonCount += 1;
 
-      // Collect lesson creation with priority rank
+      // Collect lesson creation with priority rank (per vehicle type)
+      const vType = allocation.vehicle.type;
+      const typeRank = (priorityRankByType.get(vType) || 0) + 1;
+      priorityRankByType.set(vType, typeRank);
+
       lessonsToCreate.push({
         slot: allocation.slot,
         scheduledDate: allocation.date,
@@ -212,7 +217,7 @@ export const generateSchedule = async (req: Request, res: Response) => {
         studentId: booking.studentId,
         instructorId: allocation.instructor.id,
         vehicleId: allocation.vehicle.id,
-        priorityRank: results.length + 1
+        priorityRank: typeRank
       });
 
       // Collect booking status update
@@ -241,7 +246,7 @@ export const generateSchedule = async (req: Request, res: Response) => {
       }
 
       results.push({
-        priorityRank: results.length + 1,
+        priorityRank: typeRank,
         bookingId: booking.id,
         studentId: booking.studentId,
         examDate: booking.examDate?.toISOString() ?? null,

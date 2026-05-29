@@ -135,10 +135,14 @@ export const getMyBookings = async (_req: Request, res: Response) => {
     });
     if (!student) return res.status(404).json({ message: "Student not found" });
 
+    const vehicleType = _req.query.vehicleType as string | undefined;
     const orderBy = parseSortParams(_req, "createdAt", "desc");
 
+    const where: any = { studentId: student.id };
+    if (vehicleType) where.vehicleType = vehicleType;
+
     const bookings = await prisma.booking.findMany({
-      where: { studentId: student.id },
+      where,
       orderBy
     });
 

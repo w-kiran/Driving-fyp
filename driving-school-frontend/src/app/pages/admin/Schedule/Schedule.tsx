@@ -1,16 +1,22 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchBookings, generateSchedule, fetchLessons } from '@/store/slices/adminSlice'
 import { getSlotTimeRange } from '@/utils/slotTimes'
 import { useSort } from '@/hooks/useSort'
 import SortableHeader from '@/components/SortableHeader/SortableHeader'
+import type { VehicleType } from '@/types'
 import toast from 'react-hot-toast'
 import './Schedule.scss'
+
+const VEHICLE_TYPES: VehicleType[] = ['CAR', 'BIKE', 'SCOOTER']
+const VEHICLE_LABELS: Record<VehicleType, string> = { CAR: 'Car', BIKE: 'Bike', SCOOTER: 'Scooter' }
+const VEHICLE_ICONS: Record<VehicleType, string> = { CAR: '🚗', BIKE: '🏍️', SCOOTER: '🛵' }
 
 const Schedule = () => {
   const dispatch = useAppDispatch()
   const { bookings, lessons, scheduleGenerating, scheduleResults, error } = useAppSelector((state: RootState) => state.admin)
+  const [activeType, setActiveType] = useState<VehicleType>('CAR')
 
   useEffect(() => {
     dispatch(fetchBookings())
@@ -20,8 +26,12 @@ const Schedule = () => {
   const pendingBookings = bookings?.filter((b) => b.status === 'PENDING') || []
   const scheduledLessons = lessons?.filter((l) => l.status === 'SCHEDULED') || []
 
-  const pendingSort = useSort(pendingBookings, 'id', 'asc')
-  const resultsSort = useSort(scheduleResults, 'bookingId', 'asc')
+  // Filter by active vehicle type
+  const pendingByType = pendingBookings.filter((b) => b.vehicleType === activeType)
+  const resultsByType = scheduleResults.filter((r) => r.vehicleType === activeType)
+
+  const pendingSort = useSort(pendingByType, 'id', 'asc')
+  const resultsSort = useSort(resultsByType, 'priorityRank', 'asc')
 
   const handleGenerate = async () => {
     const result = await dispatch(generateSchedule())
@@ -33,6 +43,22 @@ const Schedule = () => {
       toast.error(error || 'Failed to generate schedule')
     }
   }
+
+  const countsByType = VEHICLE_TYPES.reduce(
+    (acc, t) => {
+      acc[t] = pendingBookings.filter((b) => b.vehicleType === t).length
+      return acc
+    },
+    {} as Record<VehicleType, number>,
+  )
+
+  const resultsCountByType = VEHICLE_TYPES.reduce(
+    (acc, t) => {
+      acc[t] = scheduleResults.filter((r) => r.vehicleType === t).length
+      return acc
+    },
+    {} as Record<VehicleType, number>,
+  )
 
   return (
     <div className="schedule-page">
@@ -72,14 +98,35 @@ const Schedule = () => {
         </div>
       </div>
 
-      {resultsSort.sortedData.length > 0 && (
+      {/* Vehicle Type Tabs */}
+      <div className="vehicle-tabs">
+        {VEHICLE_TYPES.map((type) => (
+          <button
+            key={type}
+            className={`vehicle-tab ${activeType === type ? 'active' : ''}`}
+            onClick={() => setActiveType(type)}
+          >
+            <span className="vehicle-tab__icon">{VEHICLE_ICONS[type]}</span>
+            <span className="vehicle-tab__label">{VEHICLE_LABELS[type]}</span>
+            {countsByType[type] > 0 && (
+              <span className="vehicle-tab__count">{countsByType[type]} pending</span>
+            )}
+            {resultsCountByType[type] > 0 && (
+              <span className="vehicle-tab__result-count">{resultsCountByType[type]} scheduled</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {resultsByType.length > 0 && (
         <div className="schedule-results card">
           <div className="results-header">
-            <h3>Latest Scheduling Results</h3>
+            <h3>{VEHICLE_LABELS[activeType]} Scheduling Results</h3>
           </div>
           <table className="bookings-table">
             <thead>
               <tr>
+                <SortableHeader label="Priority" sortKey="priorityRank" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
                 <SortableHeader label="Booking" sortKey="bookingId" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
                 <SortableHeader label="Exam Date" sortKey="examDate" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
                 <SortableHeader label="Failures" sortKey="failures" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
@@ -88,12 +135,17 @@ const Schedule = () => {
                 <SortableHeader label="Assigned" sortKey="assignedDate" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
                 <SortableHeader label="Status" sortKey="shifted" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
                 <SortableHeader label="Instructor" sortKey="instructorName" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
-                <SortableHeader label="Vehicle" sortKey="vehicleType" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
               </tr>
             </thead>
             <tbody>
               {resultsSort.sortedData.map((r, i) => (
                 <tr key={i} className={r.shifted ? 'shifted-row' : ''}>
+                  <td>
+                    <span className={`priority-token priority-token--${r.priorityRank <= 3 ? 'high' : r.priorityRank <= 6 ? 'mid' : 'low'}`}>
+                      <span className="priority-token__rank">{r.priorityRank}</span>
+                      <span className="priority-token__label">PRIORITY</span>
+                    </span>
+                  </td>
                   <td>#{r.bookingId}</td>
                   <td>{r.examDate ? new Date(r.examDate).toLocaleDateString() : <span className="no-exam">None</span>}</td>
                   <td>{r.failures}</td>
@@ -108,7 +160,6 @@ const Schedule = () => {
                     )}
                   </td>
                   <td>{r.instructorName}</td>
-                  <td>{r.vehicleType}</td>
                 </tr>
               ))}
             </tbody>
@@ -116,10 +167,10 @@ const Schedule = () => {
         </div>
       )}
 
-      {pendingSort.sortedData.length > 0 && (
+      {pendingByType.length > 0 && (
         <div className="pending-bookings card">
           <div className="results-header">
-            <h3>Pending Bookings</h3>
+            <h3>Pending {VEHICLE_LABELS[activeType]} Bookings</h3>
           </div>
           <table className="bookings-table">
             <thead>
@@ -128,7 +179,6 @@ const Schedule = () => {
                 <SortableHeader label="Preferred Date" sortKey="preferredDate" sortConfig={pendingSort.sortConfig} onSort={pendingSort.requestSort} />
                 <SortableHeader label="Exam Date" sortKey="examDate" sortConfig={pendingSort.sortConfig} onSort={pendingSort.requestSort} />
                 <SortableHeader label="Slot" sortKey="preferredSlot" sortConfig={pendingSort.sortConfig} onSort={pendingSort.requestSort} />
-                <SortableHeader label="Vehicle" sortKey="vehicleType" sortConfig={pendingSort.sortConfig} onSort={pendingSort.requestSort} />
                 <SortableHeader label="Level" sortKey="experienceLevel" sortConfig={pendingSort.sortConfig} onSort={pendingSort.requestSort} />
                 <SortableHeader label="Failures" sortKey="failures" sortConfig={pendingSort.sortConfig} onSort={pendingSort.requestSort} />
               </tr>
@@ -140,7 +190,6 @@ const Schedule = () => {
                   <td>{booking.preferredDate}</td>
                   <td>{booking.examDate ? new Date(booking.examDate).toLocaleDateString() : <span className="no-exam">None</span>}</td>
                   <td>{booking.preferredSlot} ({getSlotTimeRange(booking.preferredSlot)})</td>
-                  <td>{booking.vehicleType}</td>
                   <td>{booking.experienceLevel}</td>
                   <td>{booking.failures}</td>
                 </tr>
@@ -150,10 +199,10 @@ const Schedule = () => {
         </div>
       )}
 
-      {pendingBookings.length === 0 && (
+      {activeType && pendingByType.length === 0 && resultsByType.length === 0 && (
         <div className="empty-state card">
-          <h3>No pending bookings</h3>
-          <p>All bookings have been scheduled.</p>
+          <h3>No {VEHICLE_LABELS[activeType]} bookings</h3>
+          <p>All {VEHICLE_LABELS[activeType].toLowerCase()} bookings have been scheduled.</p>
         </div>
       )}
     </div>

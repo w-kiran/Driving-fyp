@@ -7,10 +7,12 @@ export const getAllLessons = async (req: Request, res: Response) => {
     const status = req.query.status as string | undefined;
     const instructorId = req.query.instructorId as string | undefined;
     const date = req.query.date as string | undefined;
+    const vehicleType = req.query.vehicleType as string | undefined;
 
     const where: any = {};
     if (status) where.status = status;
     if (instructorId) where.instructorId = parseInt(instructorId);
+    if (vehicleType) where.vehicle = { type: vehicleType };
 
     const orderBy = parseSortParams(req, "id", "desc");
 

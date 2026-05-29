@@ -4,13 +4,19 @@ import { RootState } from '@/store'
 import { fetchBookings, updateBookingStatus } from '@/store/slices/adminSlice'
 import { useServerSort } from '@/hooks/useServerSort'
 import SortableHeader from '@/components/SortableHeader/SortableHeader'
+import type { VehicleType } from '@/types'
 import toast from 'react-hot-toast'
 import './Bookings.scss'
+
+const VEHICLE_TYPES: VehicleType[] = ['CAR', 'BIKE', 'SCOOTER']
+const VEHICLE_LABELS: Record<VehicleType, string> = { CAR: 'Car', BIKE: 'Bike', SCOOTER: 'Scooter' }
+const VEHICLE_ICONS: Record<VehicleType, string> = { CAR: '🚗', BIKE: '🏍️', SCOOTER: '🛵' }
 
 const Bookings = () => {
   const dispatch = useAppDispatch()
   const { bookings, loading } = useAppSelector((state: RootState) => state.admin)
   const [filter, setFilter] = useState<'all' | 'PENDING' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED'>('all')
+  const [activeType, setActiveType] = useState<VehicleType>('CAR')
 
   const fetchSortedBookings = useCallback(
     (sortBy: string, sortOrder: 'asc' | 'desc') => {
@@ -21,8 +27,10 @@ const Bookings = () => {
 
   const { sortConfig, requestSort } = useServerSort(fetchSortedBookings, 'id', 'desc')
 
-  const displayedBookings =
+  const filteredByStatus =
     filter === 'all' ? bookings : bookings?.filter((b) => b.status === filter)
+
+  const displayedBookings = filteredByStatus?.filter((b) => b.vehicleType === activeType)
 
   const handleUpdateStatus = async (bookingId: number, newStatus: 'PENDING' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED') => {
     try {
@@ -33,6 +41,15 @@ const Bookings = () => {
       toast.error(errorMessage?.response?.data?.message || 'Failed to update booking status')
     }
   }
+
+  const countsByType = VEHICLE_TYPES.reduce(
+    (acc, t) => {
+      const filtered = filter === 'all' ? bookings : bookings?.filter((b) => b.status === filter)
+      acc[t] = (filtered || []).filter((b) => b.vehicleType === t).length
+      return acc
+    },
+    {} as Record<VehicleType, number>,
+  )
 
   return (
     <div className="bookings-page">
@@ -51,13 +68,30 @@ const Bookings = () => {
         </div>
       </div>
 
+      {/* Vehicle Type Tabs */}
+      <div className="vehicle-tabs">
+        {VEHICLE_TYPES.map((type) => (
+          <button
+            key={type}
+            className={`vehicle-tab ${activeType === type ? 'active' : ''}`}
+            onClick={() => setActiveType(type)}
+          >
+            <span className="vehicle-tab__icon">{VEHICLE_ICONS[type]}</span>
+            <span className="vehicle-tab__label">{VEHICLE_LABELS[type]}</span>
+            {countsByType[type] > 0 && (
+              <span className="vehicle-tab__count">{countsByType[type]}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <div className="loading-container">
           <div className="spinner" />
         </div>
       ) : displayedBookings?.length === 0 ? (
         <div className="empty-state card">
-          <h3>No bookings found</h3>
+          <h3>No {VEHICLE_LABELS[activeType]} bookings found</h3>
         </div>
       ) : (
         <div className="bookings-table-container card">
@@ -68,7 +102,6 @@ const Bookings = () => {
                 <SortableHeader label="Student" sortKey="student.user.name" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Date" sortKey="preferredDate" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Slot" sortKey="preferredSlot" sortConfig={sortConfig} onSort={requestSort} />
-                <SortableHeader label="Vehicle" sortKey="vehicleType" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Duration" sortKey="trainingDuration" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Status" sortKey="status" sortConfig={sortConfig} onSort={requestSort} />
                 <th>Actions</th>
@@ -81,7 +114,6 @@ const Bookings = () => {
                   <td>{booking.student?.user?.name || 'Student'}</td>
                   <td>{booking.preferredDate}</td>
                   <td>{booking.preferredSlot}</td>
-                  <td>{booking.vehicleType}</td>
                   <td>{booking.trainingDuration} min</td>
                   <td>
                     <select

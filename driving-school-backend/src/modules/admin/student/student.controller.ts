@@ -118,8 +118,10 @@ export const deleteStudent = async (req: Request, res: Response) => {
     if (!student) return res.status(404).json({ message: "Student not found" });
 
     await prisma.$transaction(async (tx) => {
+      await tx.payment.deleteMany({ where: { studentId: id } });
       await tx.booking.deleteMany({ where: { studentId: id } });
       await tx.lesson.deleteMany({ where: { studentId: id } });
+      await tx.notification.deleteMany({ where: { userId: student.userId } });
       await tx.student.delete({ where: { id } });
       await tx.user.delete({ where: { id: student.userId } });
     });

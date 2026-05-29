@@ -1,15 +1,21 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchMyBookings, fetchMyLessons } from '@/store/slices/bookingSlice'
 import { useServerSort } from '@/hooks/useServerSort'
 import SortableHeader from '@/components/SortableHeader/SortableHeader'
+import type { VehicleType } from '@/types'
 import './Dashboard.scss'
+
+const VEHICLE_TYPES: VehicleType[] = ['CAR', 'BIKE', 'SCOOTER']
+const VEHICLE_LABELS: Record<VehicleType, string> = { CAR: 'Car', BIKE: 'Bike', SCOOTER: 'Scooter' }
+const VEHICLE_ICONS: Record<VehicleType, string> = { CAR: '🚗', BIKE: '🏍️', SCOOTER: '🛵' }
 
 const Dashboard = () => {
   const dispatch = useAppDispatch()
   const { user } = useAppSelector((state: RootState) => state.auth)
   const { bookings, lessons, loading } = useAppSelector((state: RootState) => state.booking)
+  const [activeType, setActiveType] = useState<VehicleType>('CAR')
 
   const fetchSortedBookings = useCallback(
     (sortBy: string, sortOrder: 'asc' | 'desc') => {
@@ -29,7 +35,14 @@ const Dashboard = () => {
   const scheduledBookings = bookings?.filter((b) => b.status === 'SCHEDULED') || []
   const upcomingLesson = lessons?.find((l) => l.status === 'SCHEDULED')
 
-  const recentBookings = bookings?.slice(0, 5) || []
+  const recentBookingsByType = (bookings?.filter((b) => b.vehicleType === activeType) || []).slice(0, 5)
+  const countsByType = VEHICLE_TYPES.reduce(
+    (acc, t) => {
+      acc[t] = (bookings || []).filter((b) => b.vehicleType === t).length
+      return acc
+    },
+    {} as Record<VehicleType, number>,
+  )
 
   if (loading) {
     return (
@@ -113,24 +126,41 @@ const Dashboard = () => {
         </div>
       )}
 
-      {recentBookings.length > 0 && (
+      {/* Vehicle Type Tabs */}
+      {bookings && bookings.length > 0 && (
+        <div className="vehicle-tabs">
+          {VEHICLE_TYPES.map((type) => (
+            <button
+              key={type}
+              className={`vehicle-tab ${activeType === type ? 'active' : ''}`}
+              onClick={() => setActiveType(type)}
+            >
+              <span className="vehicle-tab__icon">{VEHICLE_ICONS[type]}</span>
+              <span className="vehicle-tab__label">{VEHICLE_LABELS[type]}</span>
+              {countsByType[type] > 0 && (
+                <span className="vehicle-tab__count">{countsByType[type]}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {recentBookingsByType.length > 0 ? (
         <div className="recent-bookings card">
-          <h3>Recent Bookings</h3>
+          <h3>Recent {VEHICLE_LABELS[activeType]} Bookings</h3>
           <table className="bookings-table">
             <thead>
               <tr>
                 <SortableHeader label="Date" sortKey="preferredDate" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Slot" sortKey="preferredSlot" sortConfig={sortConfig} onSort={requestSort} />
-                <SortableHeader label="Vehicle" sortKey="vehicleType" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Status" sortKey="status" sortConfig={sortConfig} onSort={requestSort} />
               </tr>
             </thead>
             <tbody>
-              {recentBookings.map((booking) => (
+              {recentBookingsByType.map((booking) => (
                 <tr key={booking.id}>
                   <td>{booking.preferredDate}</td>
                   <td>{booking.preferredSlot}</td>
-                  <td>{booking.vehicleType}</td>
                   <td>
                     <span className={`badge badge-${booking.status.toLowerCase()}`}>
                       {booking.status}
@@ -141,7 +171,14 @@ const Dashboard = () => {
             </tbody>
           </table>
         </div>
-      )}
+      ) : bookings && bookings.length > 0 ? (
+        <div className="recent-bookings card">
+          <h3>No {VEHICLE_LABELS[activeType]} bookings</h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
+            You don't have any {VEHICLE_LABELS[activeType].toLowerCase()} bookings yet.
+          </p>
+        </div>
+      ) : null}
     </div>
   )
 }

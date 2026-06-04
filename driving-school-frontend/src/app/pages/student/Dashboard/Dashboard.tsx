@@ -171,7 +171,7 @@ const Dashboard = () => {
             </div>
             <div className="detail">
               <span className="label">Vehicle:</span>
-              <span className="value">{upcomingLesson.vehicle?.type || 'Assigned'}</span>
+              <span className="value">{upcomingLesson.vehicle ? `${upcomingLesson.vehicle.name} (${upcomingLesson.vehicle.vehicleNumber})` : 'Assigned'}</span>
             </div>
           </div>
         </div>

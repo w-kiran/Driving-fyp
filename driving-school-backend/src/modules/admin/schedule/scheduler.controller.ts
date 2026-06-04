@@ -241,7 +241,7 @@ export const generateSchedule = async (req: Request, res: Response) => {
           userId: student.userId,
           type: "SCHEDULE",
           title: "Lesson Scheduled!",
-          message: `Your ${allocation.vehicle.type} lesson is on ${allocation.date} at ${timeRange} with instructor ${allocation.instructor.name}. Duration: ${booking.trainingDuration} minutes.${shiftedMsg}`
+          message: `Your ${allocation.vehicle.type} lesson (${allocation.vehicle.name}, ${allocation.vehicle.vehicleNumber}) is on ${allocation.date} at ${timeRange} with instructor ${allocation.instructor.name}. Duration: ${booking.trainingDuration} minutes.${shiftedMsg}`
         });
       }
 

@@ -59,6 +59,8 @@ export interface Instructor {
 
 export interface Vehicle {
   id: number
+  name: string
+  vehicleNumber: string
   type: VehicleType
   active: boolean
 }

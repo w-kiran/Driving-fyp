@@ -23,6 +23,8 @@ export type Instructor = {
 
 export type Vehicle = {
   id: number;
+  name: string;
+  vehicleNumber: string;
   type: string;
   active: boolean;
 };

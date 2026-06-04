@@ -57,10 +57,12 @@ model Instructor {
 }
 
 model Vehicle {
-  id      Int         @id @default(autoincrement())
-  active  Boolean     @default(true)
-  type    VehicleType
-  lessons Lesson[]
+  id           Int         @id @default(autoincrement())
+  name         String
+  vehicleNumber String     @unique
+  active       Boolean     @default(true)
+  type         VehicleType
+  lessons      Lesson[]
 }
 
 model Lesson {

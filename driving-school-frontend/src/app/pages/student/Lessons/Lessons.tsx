@@ -62,7 +62,11 @@ const Lessons = () => {
               </div>
               <div className="detail-item">
                 <span className="label">Vehicle</span>
-                <span className="value">{lesson.vehicle?.type || 'To be assigned'}</span>
+                <span className="value">
+                  {lesson.vehicle
+                    ? `${lesson.vehicle.name} (${lesson.vehicle.vehicleNumber}) - ${lesson.vehicle.type}`
+                    : 'To be assigned'}
+                </span>
               </div>
             </div>
 

@@ -10,10 +10,16 @@ const Vehicles = () => {
   const { vehicles, loading } = useAppSelector((state: RootState) => state.admin)
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
+    name: '',
+    vehicleNumber: '',
     type: 'CAR' as 'CAR' | 'BIKE' | 'SCOOTER',
   })
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [editType, setEditType] = useState<'CAR' | 'BIKE' | 'SCOOTER'>('CAR')
+  const [editForm, setEditForm] = useState({
+    name: '',
+    vehicleNumber: '',
+    type: 'CAR' as 'CAR' | 'BIKE' | 'SCOOTER',
+  })
 
   useEffect(() => {
     dispatch(fetchVehicles())
@@ -23,7 +29,7 @@ const Vehicles = () => {
     e.preventDefault()
     await dispatch(createVehicle(formData))
     toast.success('Vehicle added successfully')
-    setFormData({ type: 'CAR' })
+    setFormData({ name: '', vehicleNumber: '', type: 'CAR' })
     setShowForm(false)
   }
 
@@ -32,20 +38,24 @@ const Vehicles = () => {
     toast.success('Vehicle status updated')
   }
 
-  const handleDelete = async (id: number, type: string) => {
-    if (window.confirm(`Are you sure you want to delete the ${type} vehicle?`)) {
+  const handleDelete = async (id: number, name: string) => {
+    if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
       await dispatch(deleteVehicle(id))
       toast.success('Vehicle deleted')
     }
   }
 
-  const handleEdit = (id: number, currentType: 'CAR' | 'BIKE' | 'SCOOTER') => {
-    setEditingId(id)
-    setEditType(currentType)
+  const handleEdit = (vehicle: { id: number; name: string; vehicleNumber: string; type: 'CAR' | 'BIKE' | 'SCOOTER' }) => {
+    setEditingId(vehicle.id)
+    setEditForm({
+      name: vehicle.name,
+      vehicleNumber: vehicle.vehicleNumber,
+      type: vehicle.type,
+    })
   }
 
   const handleEditSubmit = async (id: number) => {
-    await dispatch(updateVehicle({ id, type: editType }))
+    await dispatch(updateVehicle({ id, ...editForm }))
     toast.success('Vehicle updated')
     setEditingId(null)
   }
@@ -62,6 +72,30 @@ const Vehicles = () => {
       {showForm && (
         <div className="add-form card">
           <form onSubmit={handleSubmit}>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Vehicle Name</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="e.g. Toyota Corolla"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Vehicle Number</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="e.g. BA 1 PA 1234"
+                  value={formData.vehicleNumber}
+                  onChange={(e) => setFormData({ ...formData, vehicleNumber: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
             <div className="form-group">
               <label>Vehicle Type</label>
               <select
@@ -92,25 +126,45 @@ const Vehicles = () => {
             <div key={vehicle.id} className="vehicle-card card">
               <div className="vehicle-header">
                 {editingId === vehicle.id ? (
-                  <div className="edit-inline">
+                  <div className="edit-form-inline">
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Vehicle Name"
+                      value={editForm.name}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    />
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Vehicle Number"
+                      value={editForm.vehicleNumber}
+                      onChange={(e) => setEditForm({ ...editForm, vehicleNumber: e.target.value })}
+                    />
                     <select
                       className="form-select"
-                      value={editType}
-                      onChange={(e) => setEditType(e.target.value as 'CAR' | 'BIKE' | 'SCOOTER')}
+                      value={editForm.type}
+                      onChange={(e) => setEditForm({ ...editForm, type: e.target.value as 'CAR' | 'BIKE' | 'SCOOTER' })}
                     >
                       <option value="CAR">Car</option>
                       <option value="BIKE">Bike</option>
                       <option value="SCOOTER">Scooter</option>
                     </select>
-                    <button className="btn btn-primary btn-sm" onClick={() => handleEditSubmit(vehicle.id)}>
-                      Save
-                    </button>
-                    <button className="btn btn-secondary btn-sm" onClick={() => setEditingId(null)}>
-                      Cancel
-                    </button>
+                    <div className="edit-actions">
+                      <button className="btn btn-primary btn-sm" onClick={() => handleEditSubmit(vehicle.id)}>
+                        Save
+                      </button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => setEditingId(null)}>
+                        Cancel
+                      </button>
+                    </div>
                   </div>
                 ) : (
-                  <h3>{vehicle.type}</h3>
+                  <>
+                    <h3>{vehicle.name}</h3>
+                    <span className="vehicle-number">{vehicle.vehicleNumber}</span>
+                    <span className="vehicle-type-badge">{vehicle.type}</span>
+                  </>
                 )}
                 <div className="vehicle-actions">
                   <button
@@ -121,14 +175,14 @@ const Vehicles = () => {
                   </button>
                   <button
                     className="edit-btn"
-                    onClick={() => handleEdit(vehicle.id, vehicle.type)}
+                    onClick={() => handleEdit(vehicle)}
                     title="Edit vehicle"
                   >
                     ✏️
                   </button>
                   <button
                     className="delete-btn"
-                    onClick={() => handleDelete(vehicle.id, vehicle.type)}
+                    onClick={() => handleDelete(vehicle.id, vehicle.name)}
                     title="Delete vehicle"
                   >
                     🗑️

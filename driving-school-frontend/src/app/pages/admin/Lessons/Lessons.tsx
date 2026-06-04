@@ -232,7 +232,7 @@ const Lessons = () => {
                 onChange={(e) => setEditForm({ ...editForm, vehicleId: Number(e.target.value) })}
               >
                 {vehicles?.filter(v => v.active).map((v) => (
-                  <option key={v.id} value={v.id}>{v.type}</option>
+                  <option key={v.id} value={v.id}>{v.name} ({v.vehicleNumber})</option>
                 ))}
               </select>
             </div>

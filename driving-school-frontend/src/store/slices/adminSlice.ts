@@ -99,7 +99,7 @@ export const fetchVehicles = createAsyncThunk<Vehicle[], void, { rejectValue: st
 
 export const createVehicle = createAsyncThunk<
   Vehicle,
-  { type: 'CAR' | 'BIKE' | 'SCOOTER' },
+  { name: string; vehicleNumber: string; type: 'CAR' | 'BIKE' | 'SCOOTER' },
   { rejectValue: string }
 >('admin/createVehicle', async (data, { rejectWithValue }) => {
   try {
@@ -113,11 +113,11 @@ export const createVehicle = createAsyncThunk<
 
 export const updateVehicle = createAsyncThunk<
   Vehicle,
-  { id: number; type: 'CAR' | 'BIKE' | 'SCOOTER' },
+  { id: number; name: string; vehicleNumber: string; type: 'CAR' | 'BIKE' | 'SCOOTER' },
   { rejectValue: string }
->('admin/updateVehicle', async ({ id, type }, { rejectWithValue }) => {
+>('admin/updateVehicle', async ({ id, name, vehicleNumber, type }, { rejectWithValue }) => {
   try {
-    const response = await instance.put<{ vehicle: Vehicle }>(`/vehicles/${id}`, { type })
+    const response = await instance.put<{ vehicle: Vehicle }>(`/vehicles/${id}`, { name, vehicleNumber, type })
     return response.data.vehicle
   } catch (err: unknown) {
     const error = err as { response?: { data?: { message?: string } } }

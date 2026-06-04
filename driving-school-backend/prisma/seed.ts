@@ -143,9 +143,13 @@ async function main() {
   const vehicles = [];
 
   // Cars (4)
-  for (let i = 1; i <= 4; i++) {
+  const carNames = ["Toyota Corolla", "Honda Civic", "Suzuki Swift", "Hyundai i10"];
+  const carNumbers = ["BA 1 PA 1234", "BA 2 PA 5678", "BA 3 PA 9012", "BA 4 PA 3456"];
+  for (let i = 0; i < 4; i++) {
     const v = await prisma.vehicle.create({
       data: {
+        name: carNames[i]!,
+        vehicleNumber: carNumbers[i]!,
         type: "CAR",
         active: true,
       },
@@ -154,20 +158,28 @@ async function main() {
   }
 
   // Bikes (7)
-  for (let i = 1; i <= 7; i++) {
+  const bikeNames = ["Honda Hornet", "Bajaj Pulsar", "TVS Apache", "Yamaha FZ", "Hero Xtreme", "Suzuki Gixxer", "KTM Duke"];
+  const bikeNumbers = ["BA 1 PA 2001", "BA 2 PA 2002", "BA 3 PA 2003", "BA 4 PA 2004", "BA 5 PA 2005", "BA 6 PA 2006", "BA 7 PA 2007"];
+  for (let i = 0; i < 7; i++) {
     const v = await prisma.vehicle.create({
       data: {
+        name: bikeNames[i]!,
+        vehicleNumber: bikeNumbers[i]!,
         type: "BIKE",
-        active: i <= 6, // 1 inactive for testing
+        active: i <= 5, // 1 inactive for testing
       },
     });
     vehicles.push(v);
   }
 
   // Scooters (6)
-  for (let i = 1; i <= 6; i++) {
+  const scooterNames = ["Honda Activa", "TVS Jupiter", "Suzuki Access", "Yamaha Fascino", "Hero Pleasure", "Ather 450X"];
+  const scooterNumbers = ["BA 1 PA 3001", "BA 2 PA 3002", "BA 3 PA 3003", "BA 4 PA 3004", "BA 5 PA 3005", "BA 6 PA 3006"];
+  for (let i = 0; i < 6; i++) {
     const v = await prisma.vehicle.create({
       data: {
+        name: scooterNames[i]!,
+        vehicleNumber: scooterNumbers[i]!,
         type: "SCOOTER",
         active: true,
       },

@@ -2,10 +2,10 @@ import prisma from "../../../config/db.js";
 import type { Request, Response } from "express";
 
 export const addVehicle = async (req:Request, res:Response) => {
-  const { type } = req.body;
+  const { name, vehicleNumber, type } = req.body;
 
   const vehicle = await prisma.vehicle.create({
-    data: { type }
+    data: { name, vehicleNumber, type }
   });
 
   res.json({ vehicle });
@@ -31,14 +31,14 @@ export const toggleVehicleActive = async (req:Request, res:Response) => {
 export const updateVehicle = async (req:Request, res:Response) => {
   try {
     const id = parseInt(req.params.id as string);
-    const { type } = req.body;
+    const { name, vehicleNumber, type } = req.body;
 
     const vehicle = await prisma.vehicle.findUnique({ where: { id } });
     if (!vehicle) return res.status(404).json({ message: "Vehicle not found" });
 
     const updated = await prisma.vehicle.update({
       where: { id },
-      data: { type }
+      data: { name, vehicleNumber, type }
     });
     res.json({ vehicle: updated });
   } catch (err) {

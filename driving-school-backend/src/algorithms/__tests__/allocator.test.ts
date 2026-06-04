@@ -10,8 +10,8 @@ describe('allocate', () => {
   ];
 
   const vehicles = [
-    { id: 10, type: 'CAR', active: true },
-    { id: 20, type: 'BIKE', active: true },
+    { id: 10, name: 'Toyota Corolla', vehicleNumber: 'BA 1 PA 1234', type: 'CAR', active: true },
+    { id: 20, name: 'Honda Hornet', vehicleNumber: 'BA 1 PA 2001', type: 'BIKE', active: true },
   ];
 
   it('should allocate to instructor matching student\'s exam date proximity (SENIOR for close exam)', () => {

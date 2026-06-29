@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchBookings, generateSchedule, fetchLessons } from '@/store/slices/adminSlice'
 import { getSlotTimeRange } from '@/utils/slotTimes'
+import { useServerSort } from '@/hooks/useServerSort'
 import { useSort } from '@/hooks/useSort'
 import SortableHeader from '@/components/SortableHeader/SortableHeader'
 import type { VehicleType } from '@/types'
@@ -18,8 +19,21 @@ const Schedule = () => {
   const { bookings, lessons, scheduleGenerating, scheduleResults, error } = useAppSelector((state: RootState) => state.admin)
   const [activeType, setActiveType] = useState<VehicleType>('CAR')
 
+  // Server-side sort for pending bookings
+  const fetchSortedBookings = useCallback(
+    (sortBy: string, sortOrder: 'asc' | 'desc') => {
+      dispatch(fetchBookings({ sortBy, sortOrder }))
+    },
+    [dispatch],
+  )
+
+  const { sortConfig: pendingSortConfig, requestSort: pendingRequestSort } = useServerSort(
+    fetchSortedBookings,
+    'id',
+    'asc',
+  )
+
   useEffect(() => {
-    dispatch(fetchBookings())
     dispatch(fetchLessons())
   }, [dispatch])
 
@@ -30,14 +44,14 @@ const Schedule = () => {
   const pendingByType = pendingBookings.filter((b) => b.vehicleType === activeType)
   const resultsByType = scheduleResults.filter((r) => r.vehicleType === activeType)
 
-  const pendingSort = useSort(pendingByType, 'id', 'asc')
+  // Client-side sort for results (in-memory data from generate API)
   const resultsSort = useSort(resultsByType, 'priorityRank', 'asc')
 
   const handleGenerate = async () => {
     const result = await dispatch(generateSchedule())
     if (generateSchedule.fulfilled.match(result)) {
       toast.success(`Schedule generated! ${result.payload.scheduled} scheduled, ${result.payload.failed} failed`)
-      dispatch(fetchBookings())
+      fetchSortedBookings(pendingSortConfig.key, pendingSortConfig.direction)
       dispatch(fetchLessons())
     } else {
       toast.error(error || 'Failed to generate schedule')
@@ -175,16 +189,16 @@ const Schedule = () => {
           <table className="bookings-table">
             <thead>
               <tr>
-                <SortableHeader label="ID" sortKey="id" sortConfig={pendingSort.sortConfig} onSort={pendingSort.requestSort} />
-                <SortableHeader label="Preferred Date" sortKey="preferredDate" sortConfig={pendingSort.sortConfig} onSort={pendingSort.requestSort} />
-                <SortableHeader label="Exam Date" sortKey="examDate" sortConfig={pendingSort.sortConfig} onSort={pendingSort.requestSort} />
-                <SortableHeader label="Slot" sortKey="preferredSlot" sortConfig={pendingSort.sortConfig} onSort={pendingSort.requestSort} />
-                <SortableHeader label="Level" sortKey="experienceLevel" sortConfig={pendingSort.sortConfig} onSort={pendingSort.requestSort} />
-                <SortableHeader label="Failures" sortKey="failures" sortConfig={pendingSort.sortConfig} onSort={pendingSort.requestSort} />
+                <SortableHeader label="ID" sortKey="id" sortConfig={pendingSortConfig} onSort={pendingRequestSort} />
+                <SortableHeader label="Preferred Date" sortKey="preferredDate" sortConfig={pendingSortConfig} onSort={pendingRequestSort} />
+                <SortableHeader label="Exam Date" sortKey="examDate" sortConfig={pendingSortConfig} onSort={pendingRequestSort} />
+                <SortableHeader label="Slot" sortKey="preferredSlot" sortConfig={pendingSortConfig} onSort={pendingRequestSort} />
+                <SortableHeader label="Level" sortKey="experienceLevel" sortConfig={pendingSortConfig} onSort={pendingRequestSort} />
+                <SortableHeader label="Failures" sortKey="failures" sortConfig={pendingSortConfig} onSort={pendingRequestSort} />
               </tr>
             </thead>
             <tbody>
-              {pendingSort.sortedData.map((booking) => (
+              {pendingByType.map((booking) => (
                 <tr key={booking.id}>
                   <td>#{booking.id}</td>
                   <td>{booking.preferredDate}</td>

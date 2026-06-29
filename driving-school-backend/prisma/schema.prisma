@@ -50,19 +50,19 @@ model Booking {
 model Instructor {
   id               Int             @id @default(autoincrement())
   name             String
-  instructorLevel  InstructorLevel @default(INTERMEDIATE)
   dailyLessonCount Int             @default(0)
   availableSlots   Slot[]
+  instructorLevel  InstructorLevel @default(INTERMEDIATE)
   lessons          Lesson[]
 }
 
 model Vehicle {
-  id           Int         @id @default(autoincrement())
-  name         String
-  vehicleNumber String     @unique
-  active       Boolean     @default(true)
-  type         VehicleType
-  lessons      Lesson[]
+  id            Int         @id @default(autoincrement())
+  active        Boolean     @default(true)
+  type          VehicleType
+  name          String
+  vehicleNumber String      @unique
+  lessons       Lesson[]
 }
 
 model Lesson {
@@ -72,10 +72,10 @@ model Lesson {
   instructorId     Int
   vehicleId        Int
   createdAt        DateTime   @default(now())
-  scheduledDate    String     @default("")
   trainingDuration Int
   slot             Slot
   notes            String?
+  scheduledDate    String     @default("")
   priorityRank     Int?
   instructor       Instructor @relation(fields: [instructorId], references: [id])
   student          Student    @relation(fields: [studentId], references: [id])

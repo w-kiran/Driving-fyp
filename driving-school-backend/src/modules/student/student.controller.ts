@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import { parseSortParams } from "../../utils/sortHelper.js";
 
 interface BookingRequest {
-  preferredSlot: "MORNING" | "AFTERNOON" | "EVENING";
+  preferredSlot: "SLOT_1" | "SLOT_2" | "SLOT_3" | "SLOT_4" | "SLOT_5" | "SLOT_6" | "SLOT_7" | "SLOT_8" | "SLOT_9" | "SLOT_10" | "SLOT_11" | "SLOT_12";
   preferredDate: string;
   vehicleType: "CAR" | "BIKE" | "SCOOTER";
   trainingDuration: number;
@@ -96,7 +96,7 @@ export const requestNewLesson = async (req: Request, res: Response) => {
     const booking = await prisma.booking.create({
       data: {
         studentId: student.id,
-        preferredSlot: preferredSlot as "MORNING" | "AFTERNOON" | "EVENING",
+        preferredSlot: preferredSlot as "SLOT_1" | "SLOT_2" | "SLOT_3" | "SLOT_4" | "SLOT_5" | "SLOT_6" | "SLOT_7" | "SLOT_8" | "SLOT_9" | "SLOT_10" | "SLOT_11" | "SLOT_12",
         preferredDate,
         vehicleType: vehicleType as "CAR" | "BIKE" | "SCOOTER",
         trainingDuration: duration,

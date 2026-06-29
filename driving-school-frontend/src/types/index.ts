@@ -16,7 +16,7 @@ export interface AuthState {
   error: string | null
 }
 
-export type Slot = 'MORNING' | 'AFTERNOON' | 'EVENING'
+export type Slot = 'SLOT_1' | 'SLOT_2' | 'SLOT_3' | 'SLOT_4' | 'SLOT_5' | 'SLOT_6' | 'SLOT_7' | 'SLOT_8' | 'SLOT_9' | 'SLOT_10' | 'SLOT_11' | 'SLOT_12'
 export type VehicleType = 'CAR' | 'BIKE' | 'SCOOTER'
 export type ExperienceLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'
 export type InstructorLevel = 'JUNIOR' | 'INTERMEDIATE' | 'SENIOR'

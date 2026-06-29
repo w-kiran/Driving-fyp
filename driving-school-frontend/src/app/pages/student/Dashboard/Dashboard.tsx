@@ -20,7 +20,7 @@ const Dashboard = () => {
   const [activeType, setActiveType] = useState<VehicleType>('CAR')
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null)
   const [editForm, setEditForm] = useState({
-    preferredSlot: 'MORNING' as 'MORNING' | 'AFTERNOON' | 'EVENING',
+    preferredSlot: 'SLOT_1' as 'SLOT_1' | 'SLOT_2' | 'SLOT_3' | 'SLOT_4' | 'SLOT_5' | 'SLOT_6' | 'SLOT_7' | 'SLOT_8' | 'SLOT_9' | 'SLOT_10' | 'SLOT_11' | 'SLOT_12',
     preferredDate: '',
     vehicleType: 'CAR' as 'CAR' | 'BIKE' | 'SCOOTER',
     trainingDuration: 60 as 30 | 60,
@@ -270,7 +270,7 @@ const Dashboard = () => {
               <label>Time Slot</label>
               <select
                 value={editForm.preferredSlot}
-                onChange={(e) => setEditForm({ ...editForm, preferredSlot: e.target.value as 'MORNING' | 'AFTERNOON' | 'EVENING' })}
+                onChange={(e) => setEditForm({ ...editForm, preferredSlot: e.target.value as 'SLOT_1' | 'SLOT_2' | 'SLOT_3' | 'SLOT_4' | 'SLOT_5' | 'SLOT_6' | 'SLOT_7' | 'SLOT_8' | 'SLOT_9' | 'SLOT_10' | 'SLOT_11' | 'SLOT_12' })}
               >
                 {Object.entries(SLOT_TIMES).map(([key, times]) => (
                   <option key={key} value={key}>{key.charAt(0) + key.slice(1).toLowerCase()} ({times.start} - {times.end})</option>

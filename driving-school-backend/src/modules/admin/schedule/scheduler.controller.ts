@@ -28,7 +28,7 @@ export const generateSchedule = async (req: Request, res: Response) => {
       allStudents
     ] = await Promise.all([
       prisma.booking.findMany({
-        where: { status: "PENDING" },
+        where: { status: "PENDING", preferredDate: scheduleDate },
         include: { student: true }
       }),
       prisma.instructor.findMany(),

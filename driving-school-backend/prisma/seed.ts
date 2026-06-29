@@ -21,7 +21,7 @@ const randomFutureDate = (dayMin: number, dayMax: number): string => {
   return dateNDaysFromNow(randInt(dayMin, dayMax));
 };
 
-const SLOTS = ["MORNING", "AFTERNOON", "EVENING"] as const;
+const SLOTS = ["SLOT_1", "SLOT_2", "SLOT_3", "SLOT_4", "SLOT_5", "SLOT_6", "SLOT_7", "SLOT_8", "SLOT_9", "SLOT_10", "SLOT_11", "SLOT_12"] as const;
 const VEHICLE_TYPES = ["CAR", "BIKE", "SCOOTER"] as const;
 const EXPERIENCE_LEVELS = ["BEGINNER", "INTERMEDIATE", "ADVANCED"] as const;
 const PAYMENT_METHODS = ["CREDIT_CARD", "CASH", "ONLINE", "DEBIT_CARD"] as const;
@@ -229,33 +229,6 @@ async function main() {
 
   console.log(`Seeded ${bookings.length} bookings`);
 
-  // ============================================================
-  // 5. LESSONS (some completed, for variety)
-  // ============================================================
-
-  // Create a few completed lessons from past dates
-  for (let i = 0; i < 15; i++) {
-    const student = pick(students);
-    const instructor = pick(instructors);
-    const vehicle = pick(vehicles.filter(v => v.active));
-    const slot = pick([...SLOTS]);
-    const pastDate = dateNDaysFromNow(randInt(-10, -1));
-
-    await prisma.lesson.create({
-      data: {
-        status: "COMPLETED",
-        scheduledDate: pastDate,
-        studentId: student.id,
-        instructorId: instructor.id,
-        vehicleId: vehicle.id,
-        slot,
-        trainingDuration: pick([30, 60]),
-        notes: Math.random() > 0.5 ? "Good progress on basic controls" : null,
-      },
-    });
-  }
-
-  console.log("Seeded 15 completed lessons");
 
   // ============================================================
   // 6. PAYMENTS (some for variety)

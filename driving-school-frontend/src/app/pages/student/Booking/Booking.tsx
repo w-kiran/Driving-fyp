@@ -11,7 +11,7 @@ const Booking = () => {
   const { loading, error } = useAppSelector((state: RootState) => state.booking)
 
   const [formData, setFormData] = useState({
-    preferredSlot: 'MORNING' as 'MORNING' | 'AFTERNOON' | 'EVENING',
+    preferredSlot: 'SLOT_1' as 'SLOT_1' | 'SLOT_2' | 'SLOT_3' | 'SLOT_4' | 'SLOT_5' | 'SLOT_6' | 'SLOT_7' | 'SLOT_8' | 'SLOT_9' | 'SLOT_10' | 'SLOT_11' | 'SLOT_12',
     preferredDate: '',
     vehicleType: 'CAR' as 'CAR' | 'BIKE' | 'SCOOTER',
     trainingDuration: 60 as 30 | 60,
@@ -46,7 +46,7 @@ const Booking = () => {
     if (createBooking.fulfilled.match(result)) {
       toast.success('Booking created successfully!')
       setFormData({
-        preferredSlot: 'MORNING',
+        preferredSlot: 'SLOT_1',
         preferredDate: '',
         vehicleType: 'CAR',
         trainingDuration: 60,

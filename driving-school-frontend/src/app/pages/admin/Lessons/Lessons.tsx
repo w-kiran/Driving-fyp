@@ -209,9 +209,18 @@ const Lessons = () => {
                 value={editForm.slot}
                 onChange={(e) => setEditForm({ ...editForm, slot: e.target.value })}
               >
-                <option value="MORNING">Morning</option>
-                <option value="AFTERNOON">Afternoon</option>
-                <option value="EVENING">Evening</option>
+                <option value="SLOT_1">Slot 1 (8:00-9:00 AM)</option>
+                <option value="SLOT_2">Slot 2 (9:00-10:00 AM)</option>
+                <option value="SLOT_3">Slot 3 (10:00-11:00 AM)</option>
+                <option value="SLOT_4">Slot 4 (11:00 AM-12:00 PM)</option>
+                <option value="SLOT_5">Slot 5 (12:00-1:00 PM)</option>
+                <option value="SLOT_6">Slot 6 (1:00-2:00 PM)</option>
+                <option value="SLOT_7">Slot 7 (2:00-3:00 PM)</option>
+                <option value="SLOT_8">Slot 8 (3:00-4:00 PM)</option>
+                <option value="SLOT_9">Slot 9 (4:00-5:00 PM)</option>
+                <option value="SLOT_10">Slot 10 (5:00-6:00 PM)</option>
+                <option value="SLOT_11">Slot 11 (6:00-7:00 PM)</option>
+                <option value="SLOT_12">Slot 12 (7:00-8:00 PM)</option>
               </select>
             </div>
             <div className="form-group">

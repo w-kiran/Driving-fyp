@@ -51,7 +51,7 @@ model Instructor {
   id               Int             @id @default(autoincrement())
   name             String
   dailyLessonCount Int             @default(0)
-  availableSlots   Slot[]
+  available        Boolean         @default(true)
   instructorLevel  InstructorLevel @default(INTERMEDIATE)
   lessons          Lesson[]
 }

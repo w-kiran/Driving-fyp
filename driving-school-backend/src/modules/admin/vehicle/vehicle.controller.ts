@@ -8,7 +8,7 @@ export const addVehicle = async (req:Request, res:Response) => {
     data: { name, vehicleNumber, type }
   });
 
-  res.json({ vehicle });
+  res.json({ message: "Vehicle created successfully", vehicle });
 };
 
 export const getVehicles = async (req:Request, res:Response) => {
@@ -25,7 +25,7 @@ export const toggleVehicleActive = async (req:Request, res:Response) => {
     where: { id },
     data: { active: !vehicle.active }
   });
-  res.json(updated);
+  res.json({ message: "Vehicle status toggled successfully", vehicle: updated });
 };
 
 export const updateVehicle = async (req:Request, res:Response) => {
@@ -59,7 +59,7 @@ export const deleteVehicle = async (req:Request, res:Response) => {
       await tx.vehicle.delete({ where: { id } });
     });
 
-    res.json({ message: "Vehicle deleted" });
+    res.json({ message: "Vehicle deleted successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
-import { fetchBookings, generateSchedule, fetchLessons } from '@/store/slices/adminSlice'
+import { fetchBookings, generateSchedule, cancelSchedule, fetchLessons } from '@/store/slices/adminSlice'
 import { getSlotTimeRange } from '@/utils/slotTimes'
 import { useServerSort } from '@/hooks/useServerSort'
 import { useSort } from '@/hooks/useSort'
@@ -47,6 +47,20 @@ const Schedule = () => {
   // Client-side sort for results (in-memory data from generate API)
   const resultsSort = useSort(resultsByType, 'priorityRank', 'asc')
 
+  // Compute tomorrow's date (same logic as backend getTomorrow)
+  const getTomorrowStr = () => {
+    const d = new Date()
+    d.setDate(d.getDate() + 1)
+    return d.toISOString().split('T')[0]
+  }
+
+  const tomorrowStr = getTomorrowStr()
+
+  // Check if a schedule already exists for tomorrow (to control button states)
+  const hasScheduleForTomorrow = lessons?.some(
+    (l) => l.status === 'SCHEDULED' && l.scheduledDate === tomorrowStr
+  ) || false
+
   const handleGenerate = async () => {
     const result = await dispatch(generateSchedule())
     if (generateSchedule.fulfilled.match(result)) {
@@ -54,7 +68,21 @@ const Schedule = () => {
       fetchSortedBookings(pendingSortConfig.key, pendingSortConfig.direction)
       dispatch(fetchLessons())
     } else {
-      toast.error(error || 'Failed to generate schedule')
+      toast.error(error || 'Schedule generation failed')
+    }
+  }
+
+  const handleCancel = async () => {
+    if (!confirm('Are you sure you want to cancel today\'s schedule? All scheduled lessons will be removed and bookings will revert to pending.')) {
+      return
+    }
+    const result = await dispatch(cancelSchedule())
+    if (cancelSchedule.fulfilled.match(result)) {
+      toast.success(result.payload.message)
+      fetchSortedBookings(pendingSortConfig.key, pendingSortConfig.direction)
+      dispatch(fetchLessons())
+    } else {
+      toast.error((result.payload as string) || 'Schedule cancellation failed')
     }
   }
 
@@ -86,19 +114,28 @@ const Schedule = () => {
             and others are shifted to the next available slot or date.
           </p>
         </div>
-        <button
-          className="btn btn-primary generate-btn"
-          onClick={handleGenerate}
-          disabled={scheduleGenerating || pendingBookings.length === 0}
-        >
-          {scheduleGenerating ? (
-            <>
-              <span className="loading-spinner" /> Generating...
-            </>
-          ) : (
-            'Generate Schedule'
-          )}
-        </button>
+        <div className="schedule-actions">
+          <button
+            className="btn btn-primary generate-btn"
+            onClick={handleGenerate}
+            disabled={scheduleGenerating || hasScheduleForTomorrow || pendingBookings.length === 0}
+          >
+            {scheduleGenerating ? (
+              <>
+                <span className="loading-spinner" /> Generating...
+              </>
+            ) : (
+              'Generate Schedule'
+            )}
+          </button>
+          <button
+            className="btn btn-danger cancel-schedule-btn"
+            onClick={handleCancel}
+            disabled={!hasScheduleForTomorrow}
+          >
+            Cancel Today's Schedule
+          </button>
+        </div>
       </div>
 
       <div className="schedule-stats">

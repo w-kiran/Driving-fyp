@@ -13,10 +13,38 @@
       .schedule-hint { font-size: 13px; margin-top: 4px; font-style: italic; }
     }
 
+    .schedule-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
     .generate-btn {
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+
+    .cancel-schedule-btn {
+      background: $error-color;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: $border-radius;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: $transition;
+      white-space: nowrap;
+
+      &:hover:not(:disabled) {
+        background: darken($error-color, 8%);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
     }
   }
 

@@ -40,7 +40,7 @@ async function main() {
   await prisma.user.deleteMany();
 
   const studentPassword = await bcrypt.hash("password123", 10);
-  const adminPassword = await bcrypt.hash("admin123", 10);
+  const adminPassword = await bcrypt.hash("admin@gmail.com", 10);
 
   // ============================================================
   // 1. USERS + STUDENTS
@@ -113,9 +113,6 @@ async function main() {
   for (const name of allInstructorNames) {
     const isInSenior = seniorNames.includes(name);
     const isInJunior = juniorNames.includes(name);
-    const availableSlots = isInSenior
-      ? ["MORNING", "AFTERNOON", "EVENING"] as const
-      : pick([["MORNING", "AFTERNOON"] as const, ["AFTERNOON", "EVENING"] as const, ["MORNING", "EVENING"] as const]);
 
     const instructorLevel = isInSenior
       ? "SENIOR"
@@ -126,7 +123,7 @@ async function main() {
     const instructor = await prisma.instructor.create({
       data: {
         name,
-        availableSlots: [...availableSlots],
+        available: true,
         dailyLessonCount: 0,
         instructorLevel: instructorLevel as "JUNIOR" | "INTERMEDIATE" | "SENIOR",
       },

@@ -6,8 +6,6 @@ import { allocate } from "../../../algorithms/allocator.js";
 import { ConflictChecker } from "../../../algorithms/conflictChecker.js";
 import { getSlotTimeRange } from "../../../utils/slotTimes.js";
 
-const ALL_SLOTS = ["MORNING", "AFTERNOON", "EVENING"];
-
 /**
  * Get tomorrow's date as YYYY-MM-DD string.
  */
@@ -20,14 +18,13 @@ const getTomorrow = (): string => {
 export const generateSchedule = async (req: Request, res: Response) => {
   try {
     const scheduleDate = getTomorrow();
-    const scheduleDates = [scheduleDate];
 
     // 1. Fetch all data needed in parallel
     const [
       bookings,
       instructors,
       vehicles,
-      existingLessons,
+      allExistingLessons,
       allStudents
     ] = await Promise.all([
       prisma.booking.findMany({
@@ -37,29 +34,29 @@ export const generateSchedule = async (req: Request, res: Response) => {
       prisma.instructor.findMany(),
       prisma.vehicle.findMany({ where: { active: true } }),
       prisma.lesson.findMany({
-        where: { scheduledDate: scheduleDate }
+        where: { status: "SCHEDULED" }
       }),
       prisma.student.findMany({
         include: { user: { select: { id: true } } }
       })
     ]);
 
-    // Filter to only bookings with preferredDate = tomorrow
-    const tomorrowBookings = bookings.filter(b => b.preferredDate === scheduleDate);
-
-    if (tomorrowBookings.length === 0) {
-      return res.json({ message: `No pending bookings for ${scheduleDate}`, scheduled: 0, failed: 0, results: [] });
+    if (bookings.length === 0) {
+      return res.json({ message: "No pending bookings to schedule", scheduled: 0, failed: 0, results: [] });
     }
 
-    console.log(`Scheduling for ${scheduleDate}: ${tomorrowBookings.length} eligible bookings (${bookings.length - tomorrowBookings.length} excluded for other dates)`);
+    // Collect ALL unique dates from pending bookings and sort them (soonest first)
+    const uniqueDates = [...new Set(bookings.map(b => b.preferredDate))].sort();
 
-    // 2. Pre-process data for in-memory algorithm
+    console.log(`Scheduling ${bookings.length} bookings across ${uniqueDates.length} dates: [${uniqueDates.join(", ")}]`);
 
     // 2. Pre-process data for in-memory algorithm
     const instructorsForAllocation = instructors.map(i => ({
-      ...i,
+      id: i.id,
+      name: i.name,
       instructorLevel: i.instructorLevel as string,
-      availableSlots: i.availableSlots as string[]
+      available: i.available,
+      dailyLessonCount: i.dailyLessonCount
     }));
 
     const vehiclesForAllocation = vehicles.map(v => ({
@@ -68,9 +65,9 @@ export const generateSchedule = async (req: Request, res: Response) => {
 
     const studentMap = new Map(allStudents.map(s => [s.id, s]));
 
-    // Build O(1) conflict checker from existing lessons
+    // Build O(1) conflict checker from ALL existing scheduled lessons
     const conflictChecker = new ConflictChecker(
-      existingLessons.map(l => ({
+      allExistingLessons.map(l => ({
         date: l.scheduledDate,
         slot: l.slot,
         instructorId: l.instructorId,
@@ -78,8 +75,8 @@ export const generateSchedule = async (req: Request, res: Response) => {
       }))
     );
 
-    // 3. Group bookings by vehicleType and priority-sort per group
-    const bookingsData: BookingData[] = tomorrowBookings.map(b => ({
+    // 3. Build booking data and sort by priority globally
+    const bookingsData: BookingData[] = bookings.map(b => ({
       id: b.id,
       preferredSlot: b.preferredSlot as string,
       preferredDate: b.preferredDate,
@@ -91,50 +88,10 @@ export const generateSchedule = async (req: Request, res: Response) => {
       studentId: b.studentId
     }));
 
-    // Group by vehicleType and sort each group by priority
-    const vehicleTypeGroups = new Map<string, BookingData[]>();
-    for (const booking of bookingsData) {
-      const b = tomorrowBookings.find(tb => tb.id === booking.id);
-      const vType = b?.vehicleType ?? "CAR";
-      if (!vehicleTypeGroups.has(vType)) {
-        vehicleTypeGroups.set(vType, []);
-      }
-      vehicleTypeGroups.get(vType)!.push(booking);
-    }
+    // Sort all bookings by priority: closer preferredDate first, then preferredSlot priority
+    const sortedBookings = priorityScheduling(bookingsData);
 
-    // Sort each vehicle type group by priority independently
-    const orderedBookingsByType = new Map<string, BookingData[]>();
-    for (const [vType, group] of vehicleTypeGroups) {
-      orderedBookingsByType.set(vType, priorityScheduling(group));
-    }
-
-    // Flatten back to single ordered list (interleave by vehicle type for balanced processing)
-    // First all MORNING slots across types, then AFTERNOON, then EVENING
-    const orderedBookings: BookingData[] = [];
-    const added = new Set<BookingData>();
-    for (const slot of ["MORNING", "AFTERNOON", "EVENING"]) {
-      for (const [, group] of orderedBookingsByType) {
-        for (const booking of group) {
-          if (booking.preferredSlot === slot && !added.has(booking)) {
-            added.add(booking);
-            orderedBookings.push(booking);
-          }
-        }
-      }
-    }
-
-    // Log priority order for verification
-    console.log('--- Priority Order (before scheduling, by vehicle type) ---');
-    for (const [vType, group] of orderedBookingsByType) {
-      console.log(`  [${vType}] priority order:`);
-      group.forEach((b, i) => {
-        console.log(
-          `    #${i + 1}: Booking #${b.id} | slot: ${b.preferredSlot} | ` +
-          `examDate: ${b.examDate?.toISOString().split('T')[0] ?? 'NONE'}`
-        );
-      });
-    }
-    console.log('------------------------------------------');
+    console.log(`Scheduling ${sortedBookings.length} bookings sorted by priority across ${uniqueDates.length} dates`);
 
     // 4. In-memory scheduling: collect all operations, no DB calls inside the loop
     let scheduled = 0;
@@ -178,10 +135,10 @@ export const generateSchedule = async (req: Request, res: Response) => {
       message: string;
     }> = [];
 
-    for (const booking of orderedBookings) {
+    for (const booking of sortedBookings) {
       const allocation = allocate(
         booking,
-        scheduleDates,
+        uniqueDates,
         instructorsForAllocation,
         vehiclesForAllocation,
         conflictChecker
@@ -299,8 +256,12 @@ export const generateSchedule = async (req: Request, res: Response) => {
       ]);
     }, { timeout: 60000 });
 
+    const scheduledDatesStr = uniqueDates.length <= 3
+      ? uniqueDates.join(", ")
+      : `${uniqueDates[0]} ... ${uniqueDates[uniqueDates.length - 1]} (${uniqueDates.length} dates)`;
+
     res.json({
-      message: `Schedule generated for ${scheduleDate}: ${scheduled} lessons scheduled, ${failed} failed`,
+      message: `Schedule generated: ${scheduled} lessons scheduled, ${failed} failed across ${scheduledDatesStr}`,
       scheduleDate,
       scheduled,
       failed,
@@ -309,6 +270,73 @@ export const generateSchedule = async (req: Request, res: Response) => {
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Scheduling failed" });
+    res.status(500).json({ message: "Schedule generation failed" });
+  }
+};
+
+export const cancelSchedule = async (req: Request, res: Response) => {
+  try {
+    const scheduleDate = getTomorrow();
+
+    // Find all SCHEDULED lessons for tomorrow
+    const lessons = await prisma.lesson.findMany({
+      where: {
+        scheduledDate: scheduleDate,
+        status: "SCHEDULED"
+      }
+    });
+
+    if (lessons.length === 0) {
+      return res.status(400).json({ message: `No schedule found for ${scheduleDate} to cancel` });
+    }
+
+    // Group lessons by instructor to know how much to decrement
+    const instructorLessonCounts = new Map<number, number>();
+    for (const lesson of lessons) {
+      instructorLessonCounts.set(
+        lesson.instructorId,
+        (instructorLessonCounts.get(lesson.instructorId) || 0) + 1
+      );
+    }
+
+    // Unique student IDs whose bookings need reverting
+    const studentIds = [...new Set(lessons.map(l => l.studentId))];
+
+    await prisma.$transaction(async (tx) => {
+      // Delete lessons for tomorrow
+      await tx.lesson.deleteMany({
+        where: {
+          scheduledDate: scheduleDate,
+          status: "SCHEDULED"
+        }
+      });
+
+      // Set SCHEDULED bookings back to PENDING
+      await tx.booking.updateMany({
+        where: {
+          preferredDate: scheduleDate,
+          studentId: { in: studentIds },
+          status: "SCHEDULED"
+        },
+        data: { status: "PENDING" }
+      });
+
+      // Decrement instructor daily lesson counts
+      for (const [instructorId, count] of instructorLessonCounts) {
+        await tx.instructor.update({
+          where: { id: instructorId },
+          data: { dailyLessonCount: { decrement: count } }
+        });
+      }
+    }, { timeout: 60000 });
+
+    res.json({
+      message: `Schedule for ${scheduleDate} cancelled. ${lessons.length} lessons removed, bookings reverted to pending.`,
+      cancelledCount: lessons.length
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Schedule cancellation failed" });
   }
 };

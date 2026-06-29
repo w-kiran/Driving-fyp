@@ -19,12 +19,12 @@ const Notifications = () => {
 
   const handleMarkAllRead = async () => {
     await dispatch(markAllNotificationsRead())
-    toast.success('All notifications marked as read')
+    toast.success('All notifications marked as read successfully')
   }
 
   const handleDelete = async (id: number) => {
     await dispatch(deleteNotification(id))
-    toast.success('Notification deleted')
+    toast.success('Notification deleted successfully')
   }
 
   const unreadCount = notifications?.filter((n) => !n.read).length || 0

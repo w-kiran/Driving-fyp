@@ -130,6 +130,59 @@
         }
       }
     }
+
+    .instructor-actions {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid $border-color;
+
+      .toggle-btn {
+        width: 100%;
+        padding: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        border: none;
+        border-radius: $border-radius;
+        cursor: pointer;
+        transition: $transition;
+
+        &.btn-success {
+          background: #10b981;
+          color: white;
+
+          &:hover {
+            background: darken(#10b981, 8%);
+          }
+        }
+
+        &.btn-danger {
+          background: $error-color;
+          color: white;
+
+          &:hover {
+            background: darken($error-color, 8%);
+          }
+        }
+      }
+    }
+  }
+
+  .instructor-card.inactive {
+    opacity: 0.6;
+
+    .instructor-header h3 {
+      text-decoration: line-through;
+    }
+  }
+
+  .status-active {
+    color: #10b981;
+    font-weight: 600;
+  }
+
+  .status-inactive {
+    color: $error-color;
+    font-weight: 600;
   }
 
   .modal-overlay {
@@ -174,17 +227,6 @@
         font-size: 14px;
       }
 
-      .slot-options {
-        display: flex;
-        gap: 16px;
-
-        .checkbox-label {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          cursor: pointer;
-        }
-      }
     }
 
     .modal-actions {

@@ -90,7 +90,7 @@ export const requestNewLesson = async (req: Request, res: Response) => {
     });
 
     if (bookingCount >= 3) {
-      return res.status(400).json({ message: "You can only book maximum 3 lessons per day" });
+      return res.status(400).json({ message: "You can only book a maximum of 3 lessons per day" });
     }
 
     const booking = await prisma.booking.create({

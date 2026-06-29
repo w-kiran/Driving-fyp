@@ -17,7 +17,7 @@ export type Instructor = {
   id: number;
   name: string;
   instructorLevel?: string;
-  availableSlots: string[];
+  available: boolean;
   dailyLessonCount: number;
 };
 
@@ -172,9 +172,8 @@ function tryAllocate(
   vehicles: Vehicle[],
   conflictChecker: ConflictChecker
 ): AllocationResult | null {
-  // Pre-filter instructors that serve this slot
   for (const instructor of instructors) {
-    if (!instructor.availableSlots.includes(slot)) continue;
+    if (!instructor.available) continue;
 
     for (const vehicle of vehicles) {
       if (!vehicle.active) continue;

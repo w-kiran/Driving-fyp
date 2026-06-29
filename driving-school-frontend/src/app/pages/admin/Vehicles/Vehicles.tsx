@@ -28,20 +28,20 @@ const Vehicles = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     await dispatch(createVehicle(formData))
-    toast.success('Vehicle added successfully')
+    toast.success('Vehicle created successfully')
     setFormData({ name: '', vehicleNumber: '', type: 'CAR' })
     setShowForm(false)
   }
 
   const handleToggle = async (id: number) => {
     await dispatch(toggleVehicleActive(id))
-    toast.success('Vehicle status updated')
+    toast.success('Vehicle status toggled successfully')
   }
 
   const handleDelete = async (id: number, name: string) => {
     if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
       await dispatch(deleteVehicle(id))
-      toast.success('Vehicle deleted')
+      toast.success('Vehicle deleted successfully')
     }
   }
 
@@ -56,7 +56,7 @@ const Vehicles = () => {
 
   const handleEditSubmit = async (id: number) => {
     await dispatch(updateVehicle({ id, ...editForm }))
-    toast.success('Vehicle updated')
+    toast.success('Vehicle updated successfully')
     setEditingId(null)
   }
 

@@ -61,7 +61,7 @@ export const markNotificationRead = async (req: Request, res: Response) => {
       data: { read: true }
     });
 
-    res.json({ message: "Notification marked as read" });
+    res.json({ message: "Notification marked as read successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -88,7 +88,7 @@ export const markAllNotificationsRead = async (req: Request, res: Response) => {
       data: { read: true }
     });
 
-    res.json({ message: "All notifications marked as read" });
+    res.json({ message: "All notifications marked as read successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -124,7 +124,7 @@ export const deleteNotification = async (req: Request, res: Response) => {
 
     await prisma.notification.delete({ where: { id } });
 
-    res.json({ message: "Notification deleted" });
+    res.json({ message: "Notification deleted successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

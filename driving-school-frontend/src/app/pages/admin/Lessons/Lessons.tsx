@@ -66,7 +66,7 @@ const Lessons = () => {
       vehicleId: editForm.vehicleId,
       trainingDuration: editForm.trainingDuration
     }))
-    toast.success('Lesson updated')
+    toast.success('Lesson updated successfully')
     setEditingLesson(null)
     dispatch(fetchLessons({ sortBy: sortConfig.key, sortOrder: sortConfig.direction }))
   }
@@ -74,7 +74,7 @@ const Lessons = () => {
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this lesson?')) return
     await dispatch(deleteLesson(id))
-    toast.success('Lesson deleted')
+    toast.success('Lesson deleted successfully')
   }
 
   const handleComplete = async (id: number, passed: boolean) => {

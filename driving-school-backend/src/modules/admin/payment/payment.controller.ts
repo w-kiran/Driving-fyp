@@ -34,7 +34,7 @@ export const createPayment = async (req: Request, res: Response) => {
       }
     });
 
-    res.json({ message: "Payment processed", payment });
+    res.json({ message: "Payment processed successfully", payment });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -109,7 +109,7 @@ export const refundPayment = async (req: Request, res: Response) => {
       }
     });
 
-    res.json({ message: "Payment refunded", payment: updated });
+    res.json({ message: "Payment refunded successfully", payment: updated });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

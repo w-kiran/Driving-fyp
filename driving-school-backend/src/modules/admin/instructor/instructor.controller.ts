@@ -2,17 +2,16 @@ import prisma from "../../../config/db.js";
 import type { Request, Response } from "express";
 
 export const addInstructor = async (req: Request, res: Response) => {
-  const { name, availableSlots, instructorLevel } = req.body;
+  const { name, instructorLevel } = req.body;
 
   const instructor = await prisma.instructor.create({
     data: { 
       name, 
-      availableSlots,
       instructorLevel: instructorLevel ?? "INTERMEDIATE"
     }
   });
 
-  res.json({ instructor });
+  res.json({ message: "Instructor created successfully", instructor });
 };
 
 export const getInstructors = async (req: Request, res: Response) => {
@@ -23,14 +22,13 @@ export const getInstructors = async (req: Request, res: Response) => {
 export const updateInstructor = async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
-    const { name, availableSlots, instructorLevel } = req.body;
+    const { name, instructorLevel } = req.body;
 
     const existing = await prisma.instructor.findUnique({ where: { id } });
     if (!existing) return res.status(404).json({ message: "Instructor not found" });
 
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
-    if (availableSlots !== undefined) updateData.availableSlots = availableSlots;
     if (instructorLevel !== undefined) updateData.instructorLevel = instructorLevel;
 
     const instructor = await prisma.instructor.update({
@@ -39,6 +37,25 @@ export const updateInstructor = async (req: Request, res: Response) => {
     });
 
     res.json({ instructor });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const toggleInstructorAvailable = async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id as string);
+
+    const existing = await prisma.instructor.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ message: "Instructor not found" });
+
+    const updated = await prisma.instructor.update({
+      where: { id },
+      data: { available: !existing.available }
+    });
+
+    res.json({ message: "Instructor availability toggled successfully", instructor: updated });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -57,7 +74,7 @@ export const deleteInstructor = async (req: Request, res: Response) => {
       await tx.instructor.delete({ where: { id } });
     });
 
-    res.json({ message: "Instructor deleted" });
+    res.json({ message: "Instructor deleted successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

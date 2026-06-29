@@ -45,7 +45,7 @@ export const fetchInstructors = createAsyncThunk<Instructor[], void, { rejectVal
 
 export const createInstructor = createAsyncThunk<
   Instructor,
-  { name: string; instructorLevel: string; availableSlots: string[] },
+  { name: string; instructorLevel: string },
   { rejectValue: string }
 >('admin/createInstructor', async (data, { rejectWithValue }) => {
   try {
@@ -59,7 +59,7 @@ export const createInstructor = createAsyncThunk<
 
 export const updateInstructor = createAsyncThunk<
   Instructor,
-  { id: number; data: { name: string; instructorLevel: string; availableSlots: string[] } },
+  { id: number; data: { name: string; instructorLevel: string } },
   { rejectValue: string }
 >('admin/updateInstructor', async ({ id, data }, { rejectWithValue }) => {
   try {
@@ -137,6 +137,20 @@ export const deleteVehicle = createAsyncThunk<number, number, { rejectValue: str
     }
   }
 )
+
+export const toggleInstructorAvailable = createAsyncThunk<
+  { id: number; available: boolean },
+  number,
+  { rejectValue: string }
+>('admin/toggleInstructorAvailable', async (id, { rejectWithValue }) => {
+  try {
+    const response = await instance.patch<{ instructor: Instructor }>(`/instructors/${id}/toggle`)
+    return { id, available: response.data.instructor.available }
+  } catch (err: unknown) {
+    const error = err as { response?: { data?: { message?: string } } }
+    return rejectWithValue(error.response?.data?.message || 'Failed to toggle instructor')
+  }
+})
 
 export const toggleVehicleActive = createAsyncThunk<
   { id: number; active: boolean },
@@ -339,7 +353,21 @@ export const generateSchedule = createAsyncThunk<
     return response.data
   } catch (err: unknown) {
     const error = err as { response?: { data?: { message?: string } } }
-    return rejectWithValue(error.response?.data?.message || 'Failed to generate schedule')
+    return rejectWithValue(error.response?.data?.message || 'Schedule generation failed')
+  }
+})
+
+export const cancelSchedule = createAsyncThunk<
+  { message: string; cancelledCount: number },
+  void,
+  { rejectValue: string }
+>('admin/cancelSchedule', async (_, { rejectWithValue }) => {
+  try {
+    const response = await instance.post<{ message: string; cancelledCount: number }>('/admin/schedule/cancel')
+    return response.data
+  } catch (err: unknown) {
+    const error = err as { response?: { data?: { message?: string } } }
+    return rejectWithValue(error.response?.data?.message || 'Schedule cancellation failed')
   }
 })
 
@@ -423,6 +451,12 @@ const adminSlice = createSlice({
       .addCase(deleteVehicle.fulfilled, (state, action: PayloadAction<number>) => {
         state.vehicles = state.vehicles.filter((v) => v.id !== action.payload)
       })
+      .addCase(toggleInstructorAvailable.fulfilled, (state, action) => {
+        const instructor = state.instructors.find((i) => i.id === action.payload.id)
+        if (instructor) {
+          instructor.available = action.payload.available
+        }
+      })
       .addCase(toggleVehicleActive.fulfilled, (state, action) => {
         const vehicle = state.vehicles.find((v) => v.id === action.payload.id)
         if (vehicle) {
@@ -479,6 +513,9 @@ const adminSlice = createSlice({
       .addCase(generateSchedule.rejected, (state, action) => {
         state.scheduleGenerating = false
         state.error = action.payload || 'Failed to generate schedule'
+      })
+      .addCase(cancelSchedule.fulfilled, (state) => {
+        state.scheduleResults = []
       })
       .addCase(fetchPayments.fulfilled, (state, action: PayloadAction<Payment[]>) => {
         state.payments = action.payload

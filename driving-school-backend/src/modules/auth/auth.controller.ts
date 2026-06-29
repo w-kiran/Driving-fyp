@@ -28,7 +28,7 @@ export const adminLogin = async (req: Request, res: Response) => {
   }
 
   const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return res.status(400).json({ message: "Invalid password" });
+  if (!valid) return res.status(400).json({ message: "Incorrect password" });
 
   const token = jwt.sign(
     { id: user.id, role: user.role },
@@ -91,7 +91,7 @@ export const studentLogin = async (req: Request, res: Response) => {
   }
 
   const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return res.status(400).json({ message: "Invalid password" });
+  if (!valid) return res.status(400).json({ message: "Incorrect password" });
 
   const token = jwt.sign(
     { id: user.id, role: user.role },

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
-import { fetchInstructors, createInstructor, updateInstructor, deleteInstructor } from '@/store/slices/adminSlice'
+import { fetchInstructors, createInstructor, updateInstructor, deleteInstructor, toggleInstructorAvailable } from '@/store/slices/adminSlice'
 import type { Instructor } from '@/types'
 import toast from 'react-hot-toast'
 import './Instructors.scss'
@@ -14,12 +14,10 @@ const Instructors = () => {
   const [editForm, setEditForm] = useState({
     name: '',
     instructorLevel: 'INTERMEDIATE',
-    availableSlots: ['MORNING', 'AFTERNOON', 'EVENING'] as string[],
   })
   const [formData, setFormData] = useState({
     name: '',
     instructorLevel: 'INTERMEDIATE',
-    availableSlots: ['MORNING', 'AFTERNOON', 'EVENING'] as string[],
   })
 
   useEffect(() => {
@@ -34,30 +32,25 @@ const Instructors = () => {
     }
 
     await dispatch(createInstructor(formData))
-    toast.success('Instructor added successfully')
-    setFormData({ name: '', instructorLevel: 'INTERMEDIATE', availableSlots: ['MORNING', 'AFTERNOON', 'EVENING'] })
+    toast.success('Instructor created successfully')
+    setFormData({ name: '', instructorLevel: 'INTERMEDIATE' })
     setShowForm(false)
   }
 
   const handleDelete = async (id: number) => {
     if (confirm('Are you sure you want to delete this instructor?')) {
       await dispatch(deleteInstructor(id))
-      toast.success('Instructor deleted')
+      toast.success('Instructor deleted successfully')
     }
   }
 
-  const handleSlotChange = (slot: string) => {
-    const slots = formData.availableSlots.includes(slot)
-      ? formData.availableSlots.filter((s) => s !== slot)
-      : [...formData.availableSlots, slot]
-    setFormData({ ...formData, availableSlots: slots })
-  }
-
-  const handleEditSlotChange = (slot: string) => {
-    const slots = editForm.availableSlots.includes(slot)
-      ? editForm.availableSlots.filter((s) => s !== slot)
-      : [...editForm.availableSlots, slot]
-    setEditForm({ ...editForm, availableSlots: slots })
+  const handleToggle = async (instructor: Instructor) => {
+    const result = await dispatch(toggleInstructorAvailable(instructor.id))
+    if (toggleInstructorAvailable.fulfilled.match(result)) {
+      toast.success('Instructor availability toggled successfully')
+    } else {
+      toast.error((result.payload as string) || 'Failed to toggle instructor availability')
+    }
   }
 
   const handleEdit = (instructor: Instructor) => {
@@ -65,7 +58,7 @@ const Instructors = () => {
     setEditForm({
       name: instructor.name,
       instructorLevel: instructor.instructorLevel || 'INTERMEDIATE',
-      availableSlots: instructor.availableSlots || [],
+
     })
   }
 
@@ -118,21 +111,6 @@ const Instructors = () => {
                 <option value="SENIOR">Senior</option>
               </select>
             </div>
-            <div className="form-group">
-              <label>Available Slots</label>
-              <div className="slot-options">
-                {['MORNING', 'AFTERNOON', 'EVENING'].map((slot) => (
-                  <label key={slot} className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={formData.availableSlots.includes(slot)}
-                      onChange={() => handleSlotChange(slot)}
-                    />
-                    {slot}
-                  </label>
-                ))}
-              </div>
-            </div>
             <button type="submit" className="btn btn-primary">
               Add Instructor
             </button>
@@ -152,7 +130,7 @@ const Instructors = () => {
       ) : (
         <div className="instructors-grid">
           {instructors.map((instructor) => (
-            <div key={instructor.id} className="instructor-card card">
+            <div key={instructor.id} className={'instructor-card card' + (!instructor.available ? ' inactive' : '')}>
               <div className="instructor-header">
                 <h3>{instructor.name}</h3>
                 <div className="header-actions">
@@ -176,11 +154,19 @@ const Instructors = () => {
                   <span className="value">{instructor.dailyLessonCount}</span>
                 </div>
                 <div className="detail">
-                  <span className="label">Available Slots</span>
-                  <span className="value">
-                    {instructor.availableSlots?.join(', ') || 'Not set'}
+                  <span className="label">Status</span>
+                  <span className={'value status-' + (instructor.available ? 'active' : 'inactive')}>
+                    {instructor.available ? 'Active' : 'Inactive'}
                   </span>
                 </div>
+              </div>
+              <div className="instructor-actions">
+                <button
+                  className={'btn toggle-btn ' + (instructor.available ? 'btn-danger' : 'btn-success')}
+                  onClick={() => handleToggle(instructor)}
+                >
+                  {instructor.available ? 'Mark Inactive' : 'Mark Active'}
+                </button>
               </div>
             </div>
           ))}
@@ -212,21 +198,6 @@ const Instructors = () => {
                 <option value="INTERMEDIATE">Intermediate</option>
                 <option value="SENIOR">Senior</option>
               </select>
-            </div>
-            <div className="form-group">
-              <label>Available Slots</label>
-              <div className="slot-options">
-                {['MORNING', 'AFTERNOON', 'EVENING'].map((slot) => (
-                  <label key={slot} className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={editForm.availableSlots.includes(slot)}
-                      onChange={() => handleEditSlotChange(slot)}
-                    />
-                    {slot}
-                  </label>
-                ))}
-              </div>
             </div>
             <div className="modal-actions">
               <button className="btn btn-primary" onClick={handleSaveEdit}>Save</button>

@@ -75,7 +75,7 @@ export const updateLesson = async (req: Request, res: Response) => {
       include: { student: true, instructor: true, vehicle: true }
     });
 
-    res.json({ message: "Lesson updated", lesson: updated });
+    res.json({ message: "Lesson updated successfully", lesson: updated });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -96,7 +96,7 @@ export const deleteLesson = async (req: Request, res: Response) => {
       where: { id: parseInt(id) }
     });
 
-    res.json({ message: "Lesson deleted" });
+    res.json({ message: "Lesson deleted successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -146,7 +146,7 @@ export const completeLesson = async (req: Request, res: Response) => {
       });
     }
 
-    res.json({ message: "Lesson completed", lesson: updatedLesson });
+    res.json({ message: "Lesson completed successfully", lesson: updatedLesson });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

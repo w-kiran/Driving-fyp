@@ -53,7 +53,7 @@ export interface Instructor {
   id: number
   name: string
   instructorLevel: InstructorLevel
-  availableSlots: Slot[]
+  available: boolean
   dailyLessonCount: number
 }
 

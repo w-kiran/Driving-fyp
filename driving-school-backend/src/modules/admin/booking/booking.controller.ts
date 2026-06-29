@@ -53,7 +53,7 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
     const { status } = req.body;
 
     if (!["PENDING", "SCHEDULED", "COMPLETED"].includes(status)) {
-      return res.status(400).json({ message: "Invalid status" });
+      return res.status(400).json({ message: "Invalid booking status" });
     }
 
     const booking = await prisma.booking.findUnique({
@@ -67,7 +67,7 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
       data: { status: status as "PENDING" | "SCHEDULED" | "COMPLETED" }
     });
 
-    res.json({ message: "Booking updated", booking: updated });
+    res.json({ message: "Booking updated successfully", booking: updated });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -92,7 +92,7 @@ export const deleteBooking = async (req: Request, res: Response) => {
       where: { id: parseInt(id) }
     });
 
-    res.json({ message: "Booking deleted" });
+    res.json({ message: "Booking deleted successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

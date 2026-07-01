@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { register, clearError } from '@/store/slices/authSlice'
+import { useFormValidation } from '@/hooks/useFormValidation'
+import { registerSchema } from '@/utils/validation'
+import FieldError from '@/components/FieldError/FieldError'
 import toast from 'react-hot-toast'
 import './Register.scss'
 
@@ -10,6 +13,7 @@ const Register = () => {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const { loading, error } = useAppSelector((state: RootState) => state.auth)
+  const { errors, validate, validateField, clearErrors } = useFormValidation(registerSchema)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -21,18 +25,20 @@ const Register = () => {
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+    clearErrors(name)
     if (error) dispatch(clearError())
+  }
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    validateField(formData, e.target.name)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const { name, email, password, phone, address, dob } = formData
-    if (!name || !email || !password || !phone || !address || !dob) {
-      toast.error('Please fill in all fields')
-      return
-    }
+    if (!validate(formData)) return
 
     const result = await dispatch(register(formData))
     if (register.fulfilled.match(result)) {
@@ -49,7 +55,7 @@ const Register = () => {
           <p>Join DriveSmart to start your driving journey</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="register-form">
+        <form onSubmit={handleSubmit} className="register-form" noValidate>
           <div className="form-group">
             <label>Full Name</label>
             <input
@@ -57,9 +63,11 @@ const Register = () => {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className="form-input"
+              onBlur={handleBlur}
+              className={`form-input ${errors.name ? 'input-error' : ''}`}
               placeholder="Enter your full name"
             />
+            <FieldError message={errors.name} />
           </div>
 
           <div className="form-group">
@@ -69,9 +77,11 @@ const Register = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="form-input"
+              onBlur={handleBlur}
+              className={`form-input ${errors.email ? 'input-error' : ''}`}
               placeholder="Enter your email"
             />
+            <FieldError message={errors.email} />
           </div>
 
           <div className="form-group">
@@ -81,9 +91,11 @@ const Register = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="form-input"
+              onBlur={handleBlur}
+              className={`form-input ${errors.password ? 'input-error' : ''}`}
               placeholder="Create a password"
             />
+            <FieldError message={errors.password} />
           </div>
 
           <div className="form-group">
@@ -93,9 +105,11 @@ const Register = () => {
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              className="form-input"
+              onBlur={handleBlur}
+              className={`form-input ${errors.phone ? 'input-error' : ''}`}
               placeholder="Enter your phone number"
             />
+            <FieldError message={errors.phone} />
           </div>
 
           <div className="form-group">
@@ -105,9 +119,11 @@ const Register = () => {
               name="address"
               value={formData.address}
               onChange={handleChange}
-              className="form-input"
+              onBlur={handleBlur}
+              className={`form-input ${errors.address ? 'input-error' : ''}`}
               placeholder="Enter your address"
             />
+            <FieldError message={errors.address} />
           </div>
 
           <div className="form-group">
@@ -117,8 +133,10 @@ const Register = () => {
               name="dob"
               value={formData.dob}
               onChange={handleChange}
-              className="form-input"
+              onBlur={handleBlur}
+              className={`form-input ${errors.dob ? 'input-error' : ''}`}
             />
+            <FieldError message={errors.dob} />
           </div>
 
           {error && <div className="form-error">{error}</div>}

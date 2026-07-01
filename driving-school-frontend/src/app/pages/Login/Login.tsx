@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { login, clearError } from '@/store/slices/authSlice'
+import { useFormValidation } from '@/hooks/useFormValidation'
+import { loginSchema } from '@/utils/validation'
+import FieldError from '@/components/FieldError/FieldError'
 import toast from 'react-hot-toast'
 import './Login.scss'
 
@@ -10,6 +13,7 @@ const Login = () => {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const { loading, error } = useAppSelector((state: RootState) => state.auth)
+  const { errors, validate, validateField, clearErrors } = useFormValidation(loginSchema)
 
   const [formData, setFormData] = useState({
     email: '',
@@ -18,17 +22,20 @@ const Login = () => {
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+    clearErrors(name)
     if (error) dispatch(clearError())
+  }
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    validateField(formData, e.target.name)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.email || !formData.password) {
-      toast.error('Please fill in all fields')
-      return
-    }
+    if (!validate(formData)) return
 
     const result = await dispatch(login(formData))
     if (login.fulfilled.match(result)) {
@@ -49,7 +56,7 @@ const Login = () => {
           <p>Sign in to continue to DriveSmart</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="login-form">
+        <form onSubmit={handleSubmit} className="login-form" noValidate>
           <div className="form-group">
             <label>Role</label>
             <select
@@ -70,9 +77,11 @@ const Login = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="form-input"
+              onBlur={handleBlur}
+              className={`form-input ${errors.email ? 'input-error' : ''}`}
               placeholder="Enter your email"
             />
+            <FieldError message={errors.email} />
           </div>
 
           <div className="form-group">
@@ -82,9 +91,11 @@ const Login = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="form-input"
+              onBlur={handleBlur}
+              className={`form-input ${errors.password ? 'input-error' : ''}`}
               placeholder="Enter your password"
             />
+            <FieldError message={errors.password} />
           </div>
 
           {error && <div className="form-error">{error}</div>}

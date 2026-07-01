@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchVehicles, createVehicle, updateVehicle, toggleVehicleActive, deleteVehicle } from '@/store/slices/adminSlice'
+import { useFormValidation } from '@/hooks/useFormValidation'
+import { vehicleSchema } from '@/utils/validation'
+import FieldError from '@/components/FieldError/FieldError'
 import toast from 'react-hot-toast'
 import './Vehicles.scss'
 
@@ -9,6 +12,8 @@ const Vehicles = () => {
   const dispatch = useAppDispatch()
   const { vehicles, loading } = useAppSelector((state: RootState) => state.admin)
   const [showForm, setShowForm] = useState(false)
+  const { errors: addErrors, validate: validateAdd, clearErrors: clearAddErrors } = useFormValidation(vehicleSchema)
+  const { errors: editErrors, validate: validateEdit, clearErrors: clearEditErrors } = useFormValidation(vehicleSchema)
   const [formData, setFormData] = useState({
     name: '',
     vehicleNumber: '',
@@ -27,9 +32,11 @@ const Vehicles = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!validateAdd(formData)) return
     await dispatch(createVehicle(formData))
     toast.success('Vehicle created successfully')
     setFormData({ name: '', vehicleNumber: '', type: 'CAR' })
+    clearAddErrors()
     setShowForm(false)
   }
 
@@ -52,9 +59,11 @@ const Vehicles = () => {
       vehicleNumber: vehicle.vehicleNumber,
       type: vehicle.type,
     })
+    clearEditErrors()
   }
 
   const handleEditSubmit = async (id: number) => {
+    if (!validateEdit(editForm)) return
     await dispatch(updateVehicle({ id, ...editForm }))
     toast.success('Vehicle updated successfully')
     setEditingId(null)
@@ -71,35 +80,41 @@ const Vehicles = () => {
 
       {showForm && (
         <div className="add-form card">
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <div className="form-row">
               <div className="form-group">
                 <label>Vehicle Name</label>
                 <input
                   type="text"
-                  className="form-input"
+                  className={`form-input ${addErrors.name ? 'input-error' : ''}`}
                   placeholder="e.g. Toyota Corolla"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, name: e.target.value })
+                    clearAddErrors('name')
+                  }}
                 />
+                <FieldError message={addErrors.name} />
               </div>
               <div className="form-group">
                 <label>Vehicle Number</label>
                 <input
                   type="text"
-                  className="form-input"
+                  className={`form-input ${addErrors.vehicleNumber ? 'input-error' : ''}`}
                   placeholder="e.g. BA 1 PA 1234"
                   value={formData.vehicleNumber}
-                  onChange={(e) => setFormData({ ...formData, vehicleNumber: e.target.value })}
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, vehicleNumber: e.target.value })
+                    clearAddErrors('vehicleNumber')
+                  }}
                 />
+                <FieldError message={addErrors.vehicleNumber} />
               </div>
             </div>
             <div className="form-group">
               <label>Vehicle Type</label>
               <select
-                className="form-select"
+                className={`form-select ${addErrors.type ? 'input-error' : ''}`}
                 value={formData.type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value as 'CAR' | 'BIKE' | 'SCOOTER' })}
               >
@@ -107,6 +122,7 @@ const Vehicles = () => {
                 <option value="BIKE">Bike</option>
                 <option value="SCOOTER">Scooter</option>
               </select>
+              <FieldError message={addErrors.type} />
             </div>
             <button type="submit" className="btn btn-primary">Add Vehicle</button>
           </form>
@@ -127,29 +143,44 @@ const Vehicles = () => {
               <div className="vehicle-header">
                 {editingId === vehicle.id ? (
                   <div className="edit-form-inline">
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="Vehicle Name"
-                      value={editForm.name}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    />
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="Vehicle Number"
-                      value={editForm.vehicleNumber}
-                      onChange={(e) => setEditForm({ ...editForm, vehicleNumber: e.target.value })}
-                    />
-                    <select
-                      className="form-select"
-                      value={editForm.type}
-                      onChange={(e) => setEditForm({ ...editForm, type: e.target.value as 'CAR' | 'BIKE' | 'SCOOTER' })}
-                    >
-                      <option value="CAR">Car</option>
-                      <option value="BIKE">Bike</option>
-                      <option value="SCOOTER">Scooter</option>
-                    </select>
+                    <div className="edit-field">
+                      <input
+                        type="text"
+                        className={`form-input ${editErrors.name ? 'input-error' : ''}`}
+                        placeholder="Vehicle Name"
+                        value={editForm.name}
+                        onChange={(e) => {
+                          setEditForm({ ...editForm, name: e.target.value })
+                          clearEditErrors('name')
+                        }}
+                      />
+                      <FieldError message={editErrors.name} />
+                    </div>
+                    <div className="edit-field">
+                      <input
+                        type="text"
+                        className={`form-input ${editErrors.vehicleNumber ? 'input-error' : ''}`}
+                        placeholder="Vehicle Number"
+                        value={editForm.vehicleNumber}
+                        onChange={(e) => {
+                          setEditForm({ ...editForm, vehicleNumber: e.target.value })
+                          clearEditErrors('vehicleNumber')
+                        }}
+                      />
+                      <FieldError message={editErrors.vehicleNumber} />
+                    </div>
+                    <div className="edit-field">
+                      <select
+                        className={`form-select ${editErrors.type ? 'input-error' : ''}`}
+                        value={editForm.type}
+                        onChange={(e) => setEditForm({ ...editForm, type: e.target.value as 'CAR' | 'BIKE' | 'SCOOTER' })}
+                      >
+                        <option value="CAR">Car</option>
+                        <option value="BIKE">Bike</option>
+                        <option value="SCOOTER">Scooter</option>
+                      </select>
+                      <FieldError message={editErrors.type} />
+                    </div>
                     <div className="edit-actions">
                       <button className="btn btn-primary btn-sm" onClick={() => handleEditSubmit(vehicle.id)}>
                         Save

@@ -1,9 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../config/db.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import type { Request, Response } from "express";
-
-const prisma = new PrismaClient();
 
 const COOKIE_NAME = "token";
 
@@ -67,6 +65,7 @@ export const studentRegister = async (req: Request, res: Response) => {
       role: "STUDENT",
       student: {
         create: {
+          name,
           phone,
           address,
           dob: new Date(dob),

@@ -1,14 +1,24 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { createBooking } from '@/store/slices/bookingSlice'
+import { instance } from '@/api/apiClient'
+import { useFormValidation } from '@/hooks/useFormValidation'
+import { createBookingSchema } from '@/utils/validation'
+import FieldError from '@/components/FieldError/FieldError'
 import { SLOT_TIMES } from '@/utils/slotTimes'
 import toast from 'react-hot-toast'
 import './Booking.scss'
 
+interface DailyCount {
+  count: number
+  isFull: boolean
+}
+
 const Booking = () => {
   const dispatch = useAppDispatch()
   const { loading, error } = useAppSelector((state: RootState) => state.booking)
+  const { errors, validate, clearErrors } = useFormValidation(createBookingSchema)
 
   const [formData, setFormData] = useState({
     preferredSlot: 'SLOT_1' as 'SLOT_1' | 'SLOT_2' | 'SLOT_3' | 'SLOT_4' | 'SLOT_5' | 'SLOT_6' | 'SLOT_7' | 'SLOT_8' | 'SLOT_9' | 'SLOT_10' | 'SLOT_11' | 'SLOT_12',
@@ -19,17 +29,44 @@ const Booking = () => {
     examDate: '',
   })
 
+  const [dailyCounts, setDailyCounts] = useState<Record<string, DailyCount>>({})
+  const [loadingCounts, setLoadingCounts] = useState(true)
+  const maxBookingsPerDay = 132
+
+  useEffect(() => {
+    fetchDailyCounts()
+  }, [])
+
+  const fetchDailyCounts = async () => {
+    try {
+      setLoadingCounts(true)
+      const response = await instance.get<{ dailyCounts: Record<string, DailyCount>; maxBookingsPerDay: number }>(
+        '/students/daily-booking-counts'
+      )
+      setDailyCounts(response.data.dailyCounts)
+    } catch (err) {
+      console.error('Failed to fetch booking counts', err)
+    } finally {
+      setLoadingCounts(false)
+    }
+  }
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+    clearErrors(name)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.preferredDate) {
-      toast.error('Please select a date')
+    if (!validate(formData)) return
+
+    const countInfo = dailyCounts[formData.preferredDate]
+    if (countInfo?.isFull) {
+      toast.error('This date is fully booked. Please select another date.')
       return
     }
 
@@ -53,6 +90,9 @@ const Booking = () => {
         experienceLevel: 'BEGINNER',
         examDate: '',
       })
+      clearErrors()
+      // Refresh daily counts after successful booking
+      fetchDailyCounts()
     }
   }
 
@@ -64,14 +104,40 @@ const Booking = () => {
     return `${year}-${month}-${day}`
   }
 
-  const getMaxDate = () => {
-    const date = new Date()
-    date.setDate(date.getDate() + 7)
-    const day = String(date.getDate()).padStart(2, '0')
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const year = date.getFullYear()
-    return `${year}-${month}-${day}`
+  // Generate date options for the custom date grid
+  const getDateOptions = () => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const options: Array<{
+      dateStr: string
+      dayName: string
+      month: string
+      dayNum: number
+      isToday: boolean
+    }> = []
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+    for (let i = 0; i <= 7; i++) {
+      const d = new Date(today)
+      d.setDate(today.getDate() + i)
+      const day = String(d.getDate()).padStart(2, '0')
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const year = d.getFullYear()
+      const dateStr = `${year}-${month}-${day}`
+
+      options.push({
+        dateStr,
+        dayName: dayNames[d.getDay()],
+        month: monthNames[d.getMonth()],
+        dayNum: d.getDate(),
+        isToday: i === 0,
+      })
+    }
+    return options
   }
+
+  const dateOptions = getDateOptions()
 
   return (
     <div className="booking-page">
@@ -79,35 +145,62 @@ const Booking = () => {
         <h2>Book a New Lesson</h2>
         <p>Select your preferred slot and vehicle type</p>
 
-        <form onSubmit={handleSubmit} className="booking-form">
-          <div className="form-row">
-            <div className="form-group">
-              <label>Preferred Date *</label>
-              <input
-                type="date"
-                name="preferredDate"
-                value={formData.preferredDate}
-                onChange={handleChange}
-                className="form-input"
-                min={getToday()}
-                max={getMaxDate()}
-                required
-              />
-              <span className="form-hint">Book within 7 days</span>
-            </div>
+        <form onSubmit={handleSubmit} className="booking-form" noValidate>
+          <div className="form-group">
+            <label>Preferred Date *</label>
+            {loadingCounts ? (
+              <div className="date-grid-loading">Loading availability...</div>
+            ) : (
+              <>
+                <div className="date-grid">
+                  {dateOptions.map((opt) => {
+                    const countInfo = dailyCounts[opt.dateStr]
+                    const isFull = countInfo?.isFull ?? false
+                    const isSelected = formData.preferredDate === opt.dateStr
 
+                    return (
+                      <button
+                        key={opt.dateStr}
+                        type="button"
+                        className={`date-card ${isSelected ? 'selected' : ''} ${isFull ? 'full' : ''} ${opt.isToday ? 'today' : ''}`}
+                        disabled={isFull}
+                        onClick={() => setFormData({ ...formData, preferredDate: opt.dateStr })}
+                      >
+                        <span className="date-card-day">{opt.dayName}</span>
+                        <span className="date-card-num">{opt.dayNum}</span>
+                        <span className="date-card-month">{opt.month}</span>
+                        {countInfo && (
+                          <span className={`date-card-count ${isFull ? 'full' : ''}`}>
+                            {countInfo.count}/{maxBookingsPerDay}
+                          </span>
+                        )}
+                        {opt.isToday && <span className="date-card-badge">Today</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+                <span className="form-hint">
+                  Book within 7 days &middot; {maxBookingsPerDay} bookings max per day
+                </span>
+              </>
+            )}
+            <FieldError message={errors.preferredDate} />
+          </div>
+
+          <div className="form-row">
             <div className="form-group">
               <label>Preferred Time Slot *</label>
               <select
                 name="preferredSlot"
                 value={formData.preferredSlot}
                 onChange={handleChange}
-                className="form-select"
+                className={`form-select ${errors.preferredSlot ? 'input-error' : ''}`}
               >
                 {Object.entries(SLOT_TIMES).map(([key, times]) => (
                   <option key={key} value={key}>{key.charAt(0) + key.slice(1).toLowerCase()} ({times.start} - {times.end})</option>
                 ))}
               </select>
+              <FieldError message={errors.preferredSlot} />
             </div>
           </div>
 
@@ -118,12 +211,13 @@ const Booking = () => {
                 name="vehicleType"
                 value={formData.vehicleType}
                 onChange={handleChange}
-                className="form-select"
+                className={`form-select ${errors.vehicleType ? 'input-error' : ''}`}
               >
                 <option value="CAR">Car</option>
                 <option value="BIKE">Bike</option>
                 <option value="SCOOTER">Scooter</option>
               </select>
+              <FieldError message={errors.vehicleType} />
             </div>
 
             <div className="form-group">
@@ -132,11 +226,12 @@ const Booking = () => {
                 name="trainingDuration"
                 value={formData.trainingDuration}
                 onChange={handleChange}
-                className="form-select"
+                className={`form-select ${errors.trainingDuration ? 'input-error' : ''}`}
               >
                 <option value={30}>30 Minutes</option>
                 <option value={60}>60 Minutes</option>
               </select>
+              <FieldError message={errors.trainingDuration} />
             </div>
           </div>
 
@@ -146,12 +241,13 @@ const Booking = () => {
               name="experienceLevel"
               value={formData.experienceLevel}
               onChange={handleChange}
-              className="form-select"
+              className={`form-select ${errors.experienceLevel ? 'input-error' : ''}`}
             >
               <option value="BEGINNER">Beginner</option>
               <option value="INTERMEDIATE">Intermediate</option>
               <option value="ADVANCED">Advanced</option>
             </select>
+            <FieldError message={errors.experienceLevel} />
           </div>
 
           <div className="form-group">

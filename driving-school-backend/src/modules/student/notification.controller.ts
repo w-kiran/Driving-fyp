@@ -1,24 +1,11 @@
-import type { Request, Response } from "express";
+import type { Response } from "express";
+import type { AuthRequest } from "../../middleware/auth.middleware.js";
 import prisma from "../../config/db.js";
-import jwt from "jsonwebtoken";
 
-export const getMyNotifications = async (req: Request, res: Response) => {
+export const getMyNotifications = async (req: AuthRequest, res: Response) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ message: "Unauthorized" });
-
-    const token = authHeader.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-    let payload: any;
-    try {
-      payload = jwt.verify(token, process.env.JWT_SECRET!);
-    } catch {
-      return res.status(401).json({ message: "Invalid token" });
-    }
-
     const notifications = await prisma.notification.findMany({
-      where: { userId: payload.id },
+      where: { userId: req.user!.id },
       orderBy: { createdAt: "desc" }
     });
 
@@ -29,21 +16,8 @@ export const getMyNotifications = async (req: Request, res: Response) => {
   }
 };
 
-export const markNotificationRead = async (req: Request, res: Response) => {
+export const markNotificationRead = async (req: AuthRequest, res: Response) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ message: "Unauthorized" });
-
-    const token = authHeader.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-    let payload: any;
-    try {
-      payload = jwt.verify(token, process.env.JWT_SECRET!);
-    } catch {
-      return res.status(401).json({ message: "Invalid token" });
-    }
-
     const id = parseInt(req.params.id as string);
 
     const notification = await prisma.notification.findUnique({
@@ -52,7 +26,7 @@ export const markNotificationRead = async (req: Request, res: Response) => {
 
     if (!notification) return res.status(404).json({ message: "Notification not found" });
 
-    if (notification.userId !== payload.id) {
+    if (notification.userId !== req.user!.id) {
       return res.status(403).json({ message: "Forbidden" });
     }
 
@@ -68,23 +42,10 @@ export const markNotificationRead = async (req: Request, res: Response) => {
   }
 };
 
-export const markAllNotificationsRead = async (req: Request, res: Response) => {
+export const markAllNotificationsRead = async (req: AuthRequest, res: Response) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ message: "Unauthorized" });
-
-    const token = authHeader.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-    let payload: any;
-    try {
-      payload = jwt.verify(token, process.env.JWT_SECRET!);
-    } catch {
-      return res.status(401).json({ message: "Invalid token" });
-    }
-
     await prisma.notification.updateMany({
-      where: { userId: payload.id, read: false },
+      where: { userId: req.user!.id, read: false },
       data: { read: true }
     });
 
@@ -95,21 +56,8 @@ export const markAllNotificationsRead = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteNotification = async (req: Request, res: Response) => {
+export const deleteNotification = async (req: AuthRequest, res: Response) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ message: "Unauthorized" });
-
-    const token = authHeader.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-    let payload: any;
-    try {
-      payload = jwt.verify(token, process.env.JWT_SECRET!);
-    } catch {
-      return res.status(401).json({ message: "Invalid token" });
-    }
-
     const id = parseInt(req.params.id as string);
 
     const notification = await prisma.notification.findUnique({
@@ -118,7 +66,7 @@ export const deleteNotification = async (req: Request, res: Response) => {
 
     if (!notification) return res.status(404).json({ message: "Notification not found" });
 
-    if (notification.userId !== payload.id) {
+    if (notification.userId !== req.user!.id) {
       return res.status(403).json({ message: "Forbidden" });
     }
 

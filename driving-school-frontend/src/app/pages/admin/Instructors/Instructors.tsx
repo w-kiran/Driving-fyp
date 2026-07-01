@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchInstructors, createInstructor, updateInstructor, deleteInstructor, toggleInstructorAvailable } from '@/store/slices/adminSlice'
+import { useFormValidation } from '@/hooks/useFormValidation'
+import { instructorSchema } from '@/utils/validation'
+import FieldError from '@/components/FieldError/FieldError'
 import type { Instructor } from '@/types'
 import toast from 'react-hot-toast'
 import './Instructors.scss'
@@ -11,11 +14,13 @@ const Instructors = () => {
   const { instructors, loading } = useAppSelector((state: RootState) => state.admin)
   const [showForm, setShowForm] = useState(false)
   const [editingInstructor, setEditingInstructor] = useState<Instructor | null>(null)
-  const [editForm, setEditForm] = useState({
+  const { errors: addErrors, validate: validateAdd, clearErrors: clearAddErrors } = useFormValidation(instructorSchema)
+  const { errors: editErrors, validate: validateEdit, clearErrors: clearEditErrors } = useFormValidation(instructorSchema)
+  const [editForm, setEditForm] = useState<{ name: string; instructorLevel: 'JUNIOR' | 'INTERMEDIATE' | 'SENIOR' }>({
     name: '',
     instructorLevel: 'INTERMEDIATE',
   })
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{ name: string; instructorLevel: 'JUNIOR' | 'INTERMEDIATE' | 'SENIOR' }>({
     name: '',
     instructorLevel: 'INTERMEDIATE',
   })
@@ -26,14 +31,12 @@ const Instructors = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.name) {
-      toast.error('Please enter instructor name')
-      return
-    }
+    if (!validateAdd(formData)) return
 
     await dispatch(createInstructor(formData))
     toast.success('Instructor created successfully')
     setFormData({ name: '', instructorLevel: 'INTERMEDIATE' })
+    clearAddErrors()
     setShowForm(false)
   }
 
@@ -58,16 +61,13 @@ const Instructors = () => {
     setEditForm({
       name: instructor.name,
       instructorLevel: instructor.instructorLevel || 'INTERMEDIATE',
-
     })
+    clearEditErrors()
   }
 
   const handleSaveEdit = async () => {
     if (!editingInstructor) return
-    if (!editForm.name) {
-      toast.error('Please enter instructor name')
-      return
-    }
+    if (!validateEdit(editForm)) return
     const result = await dispatch(updateInstructor({ id: editingInstructor.id, data: editForm }))
     if (updateInstructor.fulfilled.match(result)) {
       toast.success('Instructor updated successfully')
@@ -88,23 +88,27 @@ const Instructors = () => {
 
       {showForm && (
         <div className="add-form card">
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <div className="form-group">
               <label>Name</label>
               <input
                 type="text"
-                className="form-input"
+                className={`form-input ${addErrors.name ? 'input-error' : ''}`}
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, name: e.target.value })
+                  clearAddErrors('name')
+                }}
                 placeholder="Enter instructor name"
               />
+              <FieldError message={addErrors.name} />
             </div>
             <div className="form-group">
               <label>Instructor Level</label>
               <select
                 className="form-input"
                 value={formData.instructorLevel}
-                onChange={(e) => setFormData({ ...formData, instructorLevel: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, instructorLevel: e.target.value as 'JUNIOR' | 'INTERMEDIATE' | 'SENIOR' })}
               >
                 <option value="JUNIOR">Junior</option>
                 <option value="INTERMEDIATE">Intermediate</option>
@@ -181,18 +185,22 @@ const Instructors = () => {
               <label>Name</label>
               <input
                 type="text"
-                className="form-input"
+                className={`form-input ${editErrors.name ? 'input-error' : ''}`}
                 value={editForm.name}
-                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                onChange={(e) => {
+                  setEditForm({ ...editForm, name: e.target.value })
+                  clearEditErrors('name')
+                }}
                 placeholder="Enter instructor name"
               />
+              <FieldError message={editErrors.name} />
             </div>
             <div className="form-group">
               <label>Instructor Level</label>
               <select
                 className="form-input"
                 value={editForm.instructorLevel}
-                onChange={(e) => setEditForm({ ...editForm, instructorLevel: e.target.value })}
+                onChange={(e) => setEditForm({ ...editForm, instructorLevel: e.target.value as 'JUNIOR' | 'INTERMEDIATE' | 'SENIOR' })}
               >
                 <option value="JUNIOR">Junior</option>
                 <option value="INTERMEDIATE">Intermediate</option>

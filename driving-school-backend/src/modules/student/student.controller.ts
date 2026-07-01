@@ -1,7 +1,9 @@
-import type { Request, Response } from "express";
+import type { Response } from "express";
+import type { AuthRequest } from "../../middleware/auth.middleware.js";
 import prisma from "../../config/db.js";
-import jwt from "jsonwebtoken";
 import { parseSortParams } from "../../utils/sortHelper.js";
+
+const MAX_BOOKINGS_PER_DAY = 132;
 
 interface BookingRequest {
   preferredSlot: "SLOT_1" | "SLOT_2" | "SLOT_3" | "SLOT_4" | "SLOT_5" | "SLOT_6" | "SLOT_7" | "SLOT_8" | "SLOT_9" | "SLOT_10" | "SLOT_11" | "SLOT_12";
@@ -14,21 +16,8 @@ interface BookingRequest {
   examDate?: string;
 }
 
-export const requestNewLesson = async (req: Request, res: Response) => {
+export const requestNewLesson = async (req: AuthRequest, res: Response) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ message: "Unauthorized" });
-
-    const token = authHeader.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-    let payload: any;
-    try {
-      payload = jwt.verify(token, process.env.JWT_SECRET!);
-    } catch {
-      return res.status(401).json({ message: "Invalid token" });
-    }
-
     const {
       preferredSlot,
       preferredDate,
@@ -50,7 +39,7 @@ export const requestNewLesson = async (req: Request, res: Response) => {
     }
 
     const student = await prisma.student.findUnique({
-      where: { userId: payload.id },
+      where: { userId: req.user!.id },
     });
     if (!student) return res.status(404).json({ message: "Student not found" });
 
@@ -85,12 +74,29 @@ export const requestNewLesson = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Preferred date cannot be more than 7 days from today" });
     }
 
-    const bookingCount = await prisma.booking.count({
-      where: { studentId: student.id, preferredDate },
+    // Check per-student daily limit (max 3 bookings per day per student)
+    const studentBookingCount = await prisma.booking.count({
+      where: {
+        studentId: student.id,
+        preferredDate,
+        status: { not: "CANCELLED" },
+      },
     });
 
-    if (bookingCount >= 3) {
+    if (studentBookingCount >= 3) {
       return res.status(400).json({ message: "You can only book a maximum of 3 lessons per day" });
+    }
+
+    // Check global daily limit (max 132 bookings across all students per day)
+    const globalBookingCount = await prisma.booking.count({
+      where: {
+        preferredDate,
+        status: { not: "CANCELLED" },
+      },
+    });
+
+    if (globalBookingCount >= MAX_BOOKINGS_PER_DAY) {
+      return res.status(400).json({ message: `This date is fully booked (${MAX_BOOKINGS_PER_DAY} max). Please select another date.` });
     }
 
     const booking = await prisma.booking.create({
@@ -115,28 +121,15 @@ export const requestNewLesson = async (req: Request, res: Response) => {
   }
 };
 
-export const getMyBookings = async (_req: Request, res: Response) => {
+export const getMyBookings = async (req: AuthRequest, res: Response) => {
   try {
-    const authHeader = _req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ message: "Unauthorized" });
-
-    const token = authHeader.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-    let payload: any;
-    try {
-      payload = jwt.verify(token, process.env.JWT_SECRET!);
-    } catch {
-      return res.status(401).json({ message: "Invalid token" });
-    }
-
     const student = await prisma.student.findUnique({
-      where: { userId: payload.id },
+      where: { userId: req.user!.id },
     });
     if (!student) return res.status(404).json({ message: "Student not found" });
 
-    const vehicleType = _req.query.vehicleType as string | undefined;
-    const orderBy = parseSortParams(_req, "createdAt", "desc");
+    const vehicleType = req.query.vehicleType as string | undefined;
+    const orderBy = parseSortParams(req, "createdAt", "desc");
 
     const where: any = { studentId: student.id };
     if (vehicleType) where.vehicleType = vehicleType;
@@ -153,23 +146,10 @@ export const getMyBookings = async (_req: Request, res: Response) => {
   }
 };
 
-export const cancelBooking = async (req: Request, res: Response) => {
+export const cancelBooking = async (req: AuthRequest, res: Response) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ message: "Unauthorized" });
-
-    const token = authHeader.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-    let payload: any;
-    try {
-      payload = jwt.verify(token, process.env.JWT_SECRET!);
-    } catch {
-      return res.status(401).json({ message: "Invalid token" });
-    }
-
     const student = await prisma.student.findUnique({
-      where: { userId: payload.id },
+      where: { userId: req.user!.id },
     });
     if (!student) return res.status(404).json({ message: "Student not found" });
 
@@ -200,23 +180,10 @@ export const cancelBooking = async (req: Request, res: Response) => {
   }
 };
 
-export const editBooking = async (req: Request, res: Response) => {
+export const editBooking = async (req: AuthRequest, res: Response) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ message: "Unauthorized" });
-
-    const token = authHeader.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-    let payload: any;
-    try {
-      payload = jwt.verify(token, process.env.JWT_SECRET!);
-    } catch {
-      return res.status(401).json({ message: "Invalid token" });
-    }
-
     const student = await prisma.student.findUnique({
-      where: { userId: payload.id },
+      where: { userId: req.user!.id },
     });
     if (!student) return res.status(404).json({ message: "Student not found" });
 
@@ -270,6 +237,20 @@ export const editBooking = async (req: Request, res: Response) => {
       }
     }
 
+    // Check global daily limit if date is being changed
+    if (preferredDate && preferredDate !== booking.preferredDate) {
+      const globalBookingCount = await prisma.booking.count({
+        where: {
+          preferredDate,
+          status: { not: "CANCELLED" },
+        },
+      });
+
+      if (globalBookingCount >= MAX_BOOKINGS_PER_DAY) {
+        return res.status(400).json({ message: `This date is fully booked (${MAX_BOOKINGS_PER_DAY} max). Please select another date.` });
+      }
+    }
+
     if (trainingDuration) {
       const duration = Number(trainingDuration);
       if (![30, 60].includes(duration)) {
@@ -299,23 +280,50 @@ export const editBooking = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteBooking = async (req: Request, res: Response) => {
+export const getDailyBookingCounts = async (_req: AuthRequest, res: Response) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ message: "Unauthorized" });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    const token = authHeader.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-    let payload: any;
-    try {
-      payload = jwt.verify(token, process.env.JWT_SECRET!);
-    } catch {
-      return res.status(401).json({ message: "Invalid token" });
+    // Generate date strings for the next 7 days (today + 7)
+    const dates: string[] = [];
+    for (let i = 0; i <= 7; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const year = d.getFullYear();
+      dates.push(`${year}-${month}-${day}`);
     }
 
+    // Count non-cancelled bookings per date in the range
+    const counts = await prisma.booking.groupBy({
+      by: ["preferredDate"],
+      where: {
+        preferredDate: { in: dates },
+        status: { not: "CANCELLED" },
+      },
+      _count: { id: true },
+    });
+
+    const result: Record<string, { count: number; isFull: boolean }> = {};
+    dates.forEach((date) => {
+      const found = counts.find((c) => c.preferredDate === date);
+      const count = found?._count.id || 0;
+      result[date] = { count, isFull: count >= MAX_BOOKINGS_PER_DAY };
+    });
+
+    res.json({ dailyCounts: result, maxBookingsPerDay: MAX_BOOKINGS_PER_DAY });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const deleteBooking = async (req: AuthRequest, res: Response) => {
+  try {
     const student = await prisma.student.findUnique({
-      where: { userId: payload.id },
+      where: { userId: req.user!.id },
     });
     if (!student) return res.status(404).json({ message: "Student not found" });
 
@@ -345,27 +353,14 @@ export const deleteBooking = async (req: Request, res: Response) => {
   }
 };
 
-export const getMyLessons = async (_req: Request, res: Response) => {
+export const getMyLessons = async (req: AuthRequest, res: Response) => {
   try {
-    const authHeader = _req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ message: "Unauthorized" });
-
-    const token = authHeader.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-    let payload: any;
-    try {
-      payload = jwt.verify(token, process.env.JWT_SECRET!);
-    } catch {
-      return res.status(401).json({ message: "Invalid token" });
-    }
-
     const student = await prisma.student.findUnique({
-      where: { userId: payload.id },
+      where: { userId: req.user!.id },
     });
     if (!student) return res.status(404).json({ message: "Student not found" });
 
-    const orderBy = parseSortParams(_req, "createdAt", "desc");
+    const orderBy = parseSortParams(req, "createdAt", "desc");
 
     const lessons = await prisma.lesson.findMany({
       where: { studentId: student.id },

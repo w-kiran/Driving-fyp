@@ -3,6 +3,9 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchMyBookings, fetchMyLessons, editBooking, deleteBooking } from '@/store/slices/bookingSlice'
 import { useServerSort } from '@/hooks/useServerSort'
+import { useFormValidation } from '@/hooks/useFormValidation'
+import { editBookingSchema } from '@/utils/validation'
+import FieldError from '@/components/FieldError/FieldError'
 import SortableHeader from '@/components/SortableHeader/SortableHeader'
 import { SLOT_TIMES } from '@/utils/slotTimes'
 import toast from 'react-hot-toast'
@@ -19,6 +22,7 @@ const Dashboard = () => {
   const { bookings, lessons, loading } = useAppSelector((state: RootState) => state.booking)
   const [activeType, setActiveType] = useState<VehicleType>('CAR')
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null)
+  const { errors: editErrors, validate: validateEdit, clearErrors: clearEditErrors } = useFormValidation(editBookingSchema)
   const [editForm, setEditForm] = useState({
     preferredSlot: 'SLOT_1' as 'SLOT_1' | 'SLOT_2' | 'SLOT_3' | 'SLOT_4' | 'SLOT_5' | 'SLOT_6' | 'SLOT_7' | 'SLOT_8' | 'SLOT_9' | 'SLOT_10' | 'SLOT_11' | 'SLOT_12',
     preferredDate: '',
@@ -52,10 +56,12 @@ const Dashboard = () => {
       experienceLevel: booking.experienceLevel,
       examDate: booking.examDate ? booking.examDate.split('T')[0] : '',
     })
+    clearEditErrors()
   }
 
   const handleSaveEdit = async () => {
     if (!editingBooking) return
+    if (!validateEdit(editForm)) return
     const result = await dispatch(editBooking({ id: editingBooking.id, data: editForm }))
     if (editBooking.fulfilled.match(result)) {
       toast.success('Booking updated successfully!')
@@ -261,53 +267,78 @@ const Dashboard = () => {
               <input
                 type="date"
                 value={editForm.preferredDate}
-                onChange={(e) => setEditForm({ ...editForm, preferredDate: e.target.value })}
+                onChange={(e) => {
+                  setEditForm({ ...editForm, preferredDate: e.target.value })
+                  clearEditErrors('preferredDate')
+                }}
+                className={`form-input ${editErrors.preferredDate ? 'input-error' : ''}`}
                 min={getToday()}
                 max={getMaxDate()}
               />
+              <FieldError message={editErrors.preferredDate} />
             </div>
             <div className="form-group">
               <label>Time Slot</label>
               <select
                 value={editForm.preferredSlot}
-                onChange={(e) => setEditForm({ ...editForm, preferredSlot: e.target.value as 'SLOT_1' | 'SLOT_2' | 'SLOT_3' | 'SLOT_4' | 'SLOT_5' | 'SLOT_6' | 'SLOT_7' | 'SLOT_8' | 'SLOT_9' | 'SLOT_10' | 'SLOT_11' | 'SLOT_12' })}
+                onChange={(e) => {
+                  setEditForm({ ...editForm, preferredSlot: e.target.value as 'SLOT_1' | 'SLOT_2' | 'SLOT_3' | 'SLOT_4' | 'SLOT_5' | 'SLOT_6' | 'SLOT_7' | 'SLOT_8' | 'SLOT_9' | 'SLOT_10' | 'SLOT_11' | 'SLOT_12' })
+                  clearEditErrors('preferredSlot')
+                }}
+                className={`form-select ${editErrors.preferredSlot ? 'input-error' : ''}`}
               >
                 {Object.entries(SLOT_TIMES).map(([key, times]) => (
                   <option key={key} value={key}>{key.charAt(0) + key.slice(1).toLowerCase()} ({times.start} - {times.end})</option>
                 ))}
               </select>
+              <FieldError message={editErrors.preferredSlot} />
             </div>
             <div className="form-group">
               <label>Vehicle Type</label>
               <select
                 value={editForm.vehicleType}
-                onChange={(e) => setEditForm({ ...editForm, vehicleType: e.target.value as 'CAR' | 'BIKE' | 'SCOOTER' })}
+                onChange={(e) => {
+                  setEditForm({ ...editForm, vehicleType: e.target.value as 'CAR' | 'BIKE' | 'SCOOTER' })
+                  clearEditErrors('vehicleType')
+                }}
+                className={`form-select ${editErrors.vehicleType ? 'input-error' : ''}`}
               >
                 <option value="CAR">Car</option>
                 <option value="BIKE">Bike</option>
                 <option value="SCOOTER">Scooter</option>
               </select>
+              <FieldError message={editErrors.vehicleType} />
             </div>
             <div className="form-group">
               <label>Duration</label>
               <select
                 value={editForm.trainingDuration}
-                onChange={(e) => setEditForm({ ...editForm, trainingDuration: Number(e.target.value) as 30 | 60 })}
+                onChange={(e) => {
+                  setEditForm({ ...editForm, trainingDuration: Number(e.target.value) as 30 | 60 })
+                  clearEditErrors('trainingDuration')
+                }}
+                className={`form-select ${editErrors.trainingDuration ? 'input-error' : ''}`}
               >
                 <option value={30}>30 Minutes</option>
                 <option value={60}>60 Minutes</option>
               </select>
+              <FieldError message={editErrors.trainingDuration} />
             </div>
             <div className="form-group">
               <label>Experience Level</label>
               <select
                 value={editForm.experienceLevel}
-                onChange={(e) => setEditForm({ ...editForm, experienceLevel: e.target.value as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' })}
+                onChange={(e) => {
+                  setEditForm({ ...editForm, experienceLevel: e.target.value as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' })
+                  clearEditErrors('experienceLevel')
+                }}
+                className={`form-select ${editErrors.experienceLevel ? 'input-error' : ''}`}
               >
                 <option value="BEGINNER">Beginner</option>
                 <option value="INTERMEDIATE">Intermediate</option>
                 <option value="ADVANCED">Advanced</option>
               </select>
+              <FieldError message={editErrors.experienceLevel} />
             </div>
             <div className="form-group">
               <label>Exam Date (Optional)</label>

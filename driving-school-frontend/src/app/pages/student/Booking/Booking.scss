@@ -52,7 +52,7 @@
 
     .form-hint {
       display: block;
-      margin-top: 4px;
+      margin-top: 8px;
       font-size: 12px;
       color: $text-muted;
     }
@@ -73,4 +73,141 @@
     font-size: 16px;
     margin-top: 8px;
   }
+}
+
+// --- Date Grid ---
+.date-grid-loading {
+  padding: 24px;
+  text-align: center;
+  color: $text-muted;
+  background: rgba($text-muted, 0.05);
+  border-radius: $border-radius;
+  border: 1px dashed $border-color;
+}
+
+.date-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.date-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 8px;
+  border: 2px solid $border-color;
+  border-radius: $border-radius;
+  background: $white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+
+  &:hover:not(:disabled) {
+    border-color: $primary-color;
+    box-shadow: 0 2px 8px rgba($primary-color, 0.15);
+    transform: translateY(-2px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $primary-color;
+    outline-offset: 2px;
+  }
+
+  // Selected state
+  &.selected {
+    border-color: $primary-color;
+    background: rgba($primary-color, 0.08);
+    box-shadow: 0 0 0 1px rgba($primary-color, 0.3);
+
+    .date-card-day,
+    .date-card-num,
+    .date-card-month {
+      color: $primary-color;
+    }
+  }
+
+  // Full / disabled state
+  &.full {
+    border-color: #ffcdd2;
+    background: #ffebee;
+    cursor: not-allowed;
+    opacity: 0.75;
+
+    .date-card-day,
+    .date-card-num,
+    .date-card-month {
+      color: #c62828;
+    }
+
+    .date-card-count {
+      color: #c62828;
+      font-weight: 600;
+    }
+
+    &:hover:not(:disabled) {
+      transform: none;
+      box-shadow: none;
+      border-color: #ffcdd2;
+    }
+  }
+
+  // Today badge
+  &.today {
+    .date-card-badge {
+      display: inline-block;
+    }
+  }
+}
+
+.date-card-day {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: $text-muted;
+  letter-spacing: 0.5px;
+}
+
+.date-card-num {
+  font-size: 22px;
+  font-weight: 700;
+  color: $text-color;
+  line-height: 1.2;
+}
+
+.date-card-month {
+  font-size: 12px;
+  color: $text-muted;
+}
+
+.date-card-count {
+  font-size: 10px;
+  color: #4caf50;
+  font-weight: 500;
+  margin-top: 4px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: rgba(#4caf50, 0.1);
+
+  &.full {
+    background: rgba(#c62828, 0.15);
+  }
+}
+
+.date-card-badge {
+  display: none;
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: rgba($primary-color, 0.12);
+  color: $primary-color;
+  letter-spacing: 0.3px;
 }

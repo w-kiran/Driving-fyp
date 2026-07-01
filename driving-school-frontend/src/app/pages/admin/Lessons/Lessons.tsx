@@ -2,6 +2,9 @@ import { useEffect, useState, useCallback } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchLessons, updateLesson, deleteLesson, completeLesson, fetchInstructors, fetchVehicles } from '@/store/slices/adminSlice'
+import { useFormValidation } from '@/hooks/useFormValidation'
+import { editLessonSchema } from '@/utils/validation'
+import FieldError from '@/components/FieldError/FieldError'
 import { getSlotTimeRange } from '@/utils/slotTimes'
 import { useServerSort } from '@/hooks/useServerSort'
 import SortableHeader from '@/components/SortableHeader/SortableHeader'
@@ -19,7 +22,8 @@ const Lessons = () => {
   const [filter, setFilter] = useState<'all' | 'SCHEDULED' | 'COMPLETED'>('all')
   const [activeType, setActiveType] = useState<VehicleType>('CAR')
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null)
-  const [editForm, setEditForm] = useState({
+  const { errors: editErrors, validate: validateEdit, clearErrors: clearEditErrors } = useFormValidation(editLessonSchema)
+  const [editForm, setEditForm] = useState<{ slot: string; instructorId: number; vehicleId: number; trainingDuration: number }>({
     slot: '',
     instructorId: 0,
     vehicleId: 0,
@@ -55,10 +59,12 @@ const Lessons = () => {
       vehicleId: lesson.vehicleId,
       trainingDuration: lesson.trainingDuration
     })
+    clearEditErrors()
   }
 
   const handleSaveEdit = async () => {
     if (!editingLesson) return
+    if (!validateEdit(editForm as any)) return
     await dispatch(updateLesson({
       id: editingLesson.id,
       slot: editForm.slot as Slot,
@@ -207,8 +213,13 @@ const Lessons = () => {
               <label>Slot</label>
               <select
                 value={editForm.slot}
-                onChange={(e) => setEditForm({ ...editForm, slot: e.target.value })}
+                onChange={(e) => {
+                  setEditForm({ ...editForm, slot: e.target.value })
+                  clearEditErrors('slot')
+                }}
+                className={`form-select ${editErrors.slot ? 'input-error' : ''}`}
               >
+                <option value="">Select a slot</option>
                 <option value="SLOT_1">Slot 1 (8:00-9:00 AM)</option>
                 <option value="SLOT_2">Slot 2 (9:00-10:00 AM)</option>
                 <option value="SLOT_3">Slot 3 (10:00-11:00 AM)</option>
@@ -222,38 +233,56 @@ const Lessons = () => {
                 <option value="SLOT_11">Slot 11 (6:00-7:00 PM)</option>
                 <option value="SLOT_12">Slot 12 (7:00-8:00 PM)</option>
               </select>
+              <FieldError message={editErrors.slot} />
             </div>
             <div className="form-group">
               <label>Instructor</label>
               <select
                 value={editForm.instructorId}
-                onChange={(e) => setEditForm({ ...editForm, instructorId: Number(e.target.value) })}
+                onChange={(e) => {
+                  setEditForm({ ...editForm, instructorId: Number(e.target.value) })
+                  clearEditErrors('instructorId')
+                }}
+                className={`form-select ${editErrors.instructorId ? 'input-error' : ''}`}
               >
+                <option value={0}>Select an instructor</option>
                 {instructors?.map((inst) => (
                   <option key={inst.id} value={inst.id}>{inst.name}</option>
                 ))}
               </select>
+              <FieldError message={editErrors.instructorId} />
             </div>
             <div className="form-group">
               <label>Vehicle</label>
               <select
                 value={editForm.vehicleId}
-                onChange={(e) => setEditForm({ ...editForm, vehicleId: Number(e.target.value) })}
+                onChange={(e) => {
+                  setEditForm({ ...editForm, vehicleId: Number(e.target.value) })
+                  clearEditErrors('vehicleId')
+                }}
+                className={`form-select ${editErrors.vehicleId ? 'input-error' : ''}`}
               >
+                <option value={0}>Select a vehicle</option>
                 {vehicles?.filter(v => v.active).map((v) => (
                   <option key={v.id} value={v.id}>{v.name} ({v.vehicleNumber})</option>
                 ))}
               </select>
+              <FieldError message={editErrors.vehicleId} />
             </div>
             <div className="form-group">
               <label>Duration (min)</label>
               <input
                 type="number"
                 value={editForm.trainingDuration}
-                onChange={(e) => setEditForm({ ...editForm, trainingDuration: Number(e.target.value) })}
+                onChange={(e) => {
+                  setEditForm({ ...editForm, trainingDuration: Number(e.target.value) })
+                  clearEditErrors('trainingDuration')
+                }}
+                className={`form-input ${editErrors.trainingDuration ? 'input-error' : ''}`}
                 min={30}
                 max={120}
               />
+              <FieldError message={editErrors.trainingDuration} />
             </div>
             <div className="modal-actions">
               <button className="btn btn-primary" onClick={handleSaveEdit}>Save</button>

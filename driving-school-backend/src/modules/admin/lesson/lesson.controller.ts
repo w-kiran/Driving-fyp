@@ -23,7 +23,7 @@ export const getAllLessons = async (req: Request, res: Response) => {
     });
 
     if (date) {
-      const filtered = lessons.filter(l => l.slot === date);
+      const filtered = lessons.filter(l => l.scheduledDate === date);
       return res.json({ lessons: filtered });
     }
 

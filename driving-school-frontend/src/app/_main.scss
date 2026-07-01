@@ -200,6 +200,15 @@ input, select, textarea {
   margin-top: 4px;
 }
 
+.input-error {
+  border-color: $error-color !important;
+
+  &:focus {
+    border-color: $error-color !important;
+    box-shadow: 0 0 0 2px rgba($error-color, 0.15);
+  }
+}
+
 .badge {
   padding: 4px 12px;
   border-radius: 20px;

@@ -330,6 +330,7 @@ export interface ScheduleResult {
   priorityRank: number
   bookingId: number
   studentId: number
+  studentName: string
   examDate: string | null
   failures: number
   lessonsCompleted: number
@@ -413,6 +414,9 @@ const adminSlice = createSlice({
   reducers: {
     clearError: (state) => {
       state.error = null
+    },
+    setScheduleResults: (state, action: PayloadAction<ScheduleResult[]>) => {
+      state.scheduleResults = action.payload
     },
   },
   extraReducers: (builder) => {
@@ -529,5 +533,5 @@ const adminSlice = createSlice({
   },
 })
 
-export const { clearError } = adminSlice.actions
+export const { clearError, setScheduleResults } = adminSlice.actions
 export default adminSlice.reducer

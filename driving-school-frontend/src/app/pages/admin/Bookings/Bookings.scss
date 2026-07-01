@@ -33,6 +33,7 @@
     .fail-btn { background: $error-color; color: $white; }
     .delete-btn { background: $text-muted; color: $white; }
     .no-action { color: $text-muted; font-size: 12px; }
+    .no-exam { color: $text-muted; font-size: 12px; font-style: italic; }
   }
 
   .loading-container, .empty-state { display: flex; justify-content: center; align-items: center; min-height: 300px; }

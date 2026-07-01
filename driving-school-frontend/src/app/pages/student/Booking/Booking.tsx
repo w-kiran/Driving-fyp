@@ -10,10 +10,23 @@ import { SLOT_TIMES } from '@/utils/slotTimes'
 import toast from 'react-hot-toast'
 import './Booking.scss'
 
-interface DailyCount {
+const VEHICLE_TYPES = ['CAR', 'BIKE', 'SCOOTER'] as const
+type VehicleType = (typeof VEHICLE_TYPES)[number]
+
+interface TypeCount {
   count: number
   isFull: boolean
+  max: number
 }
+
+interface DailyCounts {
+  CAR: TypeCount
+  BIKE: TypeCount
+  SCOOTER: TypeCount
+}
+
+const VEHICLE_LABELS: Record<VehicleType, string> = { CAR: 'Car', BIKE: 'Bike', SCOOTER: 'Scooter' }
+const VEHICLE_ICONS: Record<VehicleType, string> = { CAR: '🚗', BIKE: '🏍️', SCOOTER: '🛵' }
 
 const Booking = () => {
   const dispatch = useAppDispatch()
@@ -29,9 +42,8 @@ const Booking = () => {
     examDate: '',
   })
 
-  const [dailyCounts, setDailyCounts] = useState<Record<string, DailyCount>>({})
+  const [dailyCounts, setDailyCounts] = useState<Record<string, DailyCounts>>({})
   const [loadingCounts, setLoadingCounts] = useState(true)
-  const maxBookingsPerDay = 132
 
   useEffect(() => {
     fetchDailyCounts()
@@ -40,7 +52,7 @@ const Booking = () => {
   const fetchDailyCounts = async () => {
     try {
       setLoadingCounts(true)
-      const response = await instance.get<{ dailyCounts: Record<string, DailyCount>; maxBookingsPerDay: number }>(
+      const response = await instance.get<{ dailyCounts: Record<string, DailyCounts>; maxPerType: Record<VehicleType, number> }>(
         '/students/daily-booking-counts'
       )
       setDailyCounts(response.data.dailyCounts)
@@ -65,8 +77,9 @@ const Booking = () => {
     if (!validate(formData)) return
 
     const countInfo = dailyCounts[formData.preferredDate]
-    if (countInfo?.isFull) {
-      toast.error('This date is fully booked. Please select another date.')
+    const typeInfo = countInfo?.[formData.vehicleType]
+    if (typeInfo?.isFull) {
+      toast.error(`${VEHICLE_LABELS[formData.vehicleType]} slots are fully booked for this date (${typeInfo.max} max). Please select another date or vehicle type.`)
       return
     }
 
@@ -154,33 +167,48 @@ const Booking = () => {
               <>
                 <div className="date-grid">
                   {dateOptions.map((opt) => {
-                    const countInfo = dailyCounts[opt.dateStr]
-                    const isFull = countInfo?.isFull ?? false
+                    const typeCounts = dailyCounts[opt.dateStr]
+                    const selectedTypeInfo = typeCounts?.[formData.vehicleType]
+                    const isSelectedTypeFull = selectedTypeInfo?.isFull ?? false
                     const isSelected = formData.preferredDate === opt.dateStr
+                    const anyFull = typeCounts ? VEHICLE_TYPES.some((vt) => typeCounts[vt]?.isFull) : false
 
                     return (
                       <button
                         key={opt.dateStr}
                         type="button"
-                        className={`date-card ${isSelected ? 'selected' : ''} ${isFull ? 'full' : ''} ${opt.isTomorrow ? 'tomorrow' : ''}`}
-                        disabled={isFull}
+                        className={`date-card ${isSelected ? 'selected' : ''} ${isSelectedTypeFull ? 'full' : ''} ${opt.isTomorrow ? 'tomorrow' : ''}`}
+                        disabled={isSelectedTypeFull}
                         onClick={() => setFormData({ ...formData, preferredDate: opt.dateStr })}
                       >
                         <span className="date-card-day">{opt.dayName}</span>
                         <span className="date-card-num">{opt.dayNum}</span>
                         <span className="date-card-month">{opt.month}</span>
-                        {countInfo && (
-                          <span className={`date-card-count ${isFull ? 'full' : ''}`}>
-                            {countInfo.count}/{maxBookingsPerDay}
-                          </span>
+                        {typeCounts && (
+                          <div className="date-card-types">
+                            {VEHICLE_TYPES.map((vt) => {
+                              const tc = typeCounts[vt]
+                              const vtFull = tc?.isFull ?? false
+                              return (
+                                <span
+                                  key={vt}
+                                  className={`date-card-type ${vtFull ? 'full' : ''} ${formData.vehicleType === vt ? 'active-type' : ''}`}
+                                >
+                                  <span className="type-icon">{VEHICLE_ICONS[vt]}</span>
+                                  <span className="type-count">{tc?.count ?? 0}/{tc?.max ?? '?'}</span>
+                                </span>
+                              )
+                            })}
+                          </div>
                         )}
+                        {anyFull && !isSelectedTypeFull && <span className="date-card-partial">Partial</span>}
                         {opt.isTomorrow && <span className="date-card-badge">Tomorrow</span>}
                       </button>
                     )
                   })}
                 </div>
                 <span className="form-hint">
-                  Book within 7 days &middot; {maxBookingsPerDay} bookings max per day
+                  Book within 7 days &middot; Each vehicle type has its own daily slot limit
                 </span>
               </>
             )}

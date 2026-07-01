@@ -187,25 +187,57 @@ async function main() {
   console.log(`Seeded ${vehicles.length} vehicles (${vehicles.filter(v => v.type === "CAR").length} cars, ${vehicles.filter(v => v.type === "BIKE").length} bikes, ${vehicles.filter(v => v.type === "SCOOTER").length} scooters)`);
 
   // ============================================================
-  // 4. BOOKINGS (200+ with random dates from tomorrow)
+  // 4. BOOKINGS (160+ for tomorrow, ~40 for next days — all PENDING)
   // ============================================================
+  // Max capacity per day = 11 instructors × 12 slots = 132
+  // Tomorrow: 170 bookings (well over capacity) to test overflow behavior
+  // Next days: 40 spread across days 2–7 to round out the test data
 
   const bookings = [];
-  const totalBookings = 250;
   const tomorrow = dateNDaysFromNow(1);
+  const tomorrowBookings = 170;
+  const spreadDays = 40;
 
-  for (let i = 0; i < totalBookings; i++) {
+  // --- 170 bookings for tomorrow (will overflow the 132 max) ---
+  for (let i = 0; i < tomorrowBookings; i++) {
     const student = pick(students);
     const vehicleType = pick([...VEHICLE_TYPES]);
     const slot = pick([...SLOTS]);
     const experience = pick([...EXPERIENCE_LEVELS]);
     const duration = pick([30, 60]);
 
-    // Heavy bias toward tomorrow: ~60% tomorrow, rest spread across next 7 days
-    const prefDate = Math.random() < 0.6 ? tomorrow : randomFutureDate(2, 7);
+    const hasExam = Math.random() > 0.4;
+    const examDate = hasExam
+      ? new Date(Date.now() + randInt(7, 30) * 24 * 60 * 60 * 1000)
+      : null;
 
-    // Some students have exam dates (closer = higher priority)
-    const hasExam = Math.random() > 0.4; // 60% have exam dates
+    const booking = await prisma.booking.create({
+      data: {
+        studentId: student.id,
+        preferredSlot: slot,
+        preferredDate: tomorrow,
+        vehicleType,
+        trainingDuration: duration,
+        experienceLevel: experience,
+        examDate,
+        failures: randInt(0, 3),
+        lessonsCompleted: 0,
+        status: "PENDING",
+      },
+    });
+    bookings.push(booking);
+  }
+
+  // --- 40 bookings spread across days 2–7 ---
+  for (let i = 0; i < spreadDays; i++) {
+    const student = pick(students);
+    const vehicleType = pick([...VEHICLE_TYPES]);
+    const slot = pick([...SLOTS]);
+    const experience = pick([...EXPERIENCE_LEVELS]);
+    const duration = pick([30, 60]);
+    const prefDate = randomFutureDate(2, 7);
+
+    const hasExam = Math.random() > 0.4;
     const examDate = hasExam
       ? new Date(Date.now() + randInt(7, 30) * 24 * 60 * 60 * 1000)
       : null;
@@ -227,8 +259,43 @@ async function main() {
     bookings.push(booking);
   }
 
-  console.log(`Seeded ${bookings.length} bookings`);
+  console.log(`Seeded ${bookings.length} bookings (${tomorrowBookings} for tomorrow, ${spreadDays} spread across next days)`);
 
+  // ============================================================
+  // 5. BIKE FULL SLOT for day after tomorrow (72 bookings = 6 bikes × 12 slots)
+  // ============================================================
+  const dayAfterTomorrow = dateNDaysFromNow(2);
+  const bikeSlotCount = 72; // 6 active bikes × 12 slots
+
+  for (let i = 0; i < bikeSlotCount; i++) {
+    const student = pick(students);
+    const slot = SLOTS[i % SLOTS.length]!;
+    const experience = pick([...EXPERIENCE_LEVELS]);
+    const duration = pick([30, 60]);
+
+    const hasExam = Math.random() > 0.4;
+    const examDate = hasExam
+      ? new Date(Date.now() + randInt(7, 30) * 24 * 60 * 60 * 1000)
+      : null;
+
+    const booking = await prisma.booking.create({
+      data: {
+        studentId: student.id,
+        preferredSlot: slot,
+        preferredDate: dayAfterTomorrow,
+        vehicleType: "BIKE",
+        trainingDuration: duration,
+        experienceLevel: experience,
+        examDate,
+        failures: randInt(0, 3),
+        lessonsCompleted: 0,
+        status: "PENDING",
+      },
+    });
+    bookings.push(booking);
+  }
+
+  console.log(`Seeded ${bikeSlotCount} BIKE-only bookings for ${dayAfterTomorrow} (all BIKE slots full)`);
 
   // ============================================================
   // 6. PAYMENTS (some for variety)

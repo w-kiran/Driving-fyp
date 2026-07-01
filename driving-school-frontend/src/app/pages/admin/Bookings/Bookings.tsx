@@ -140,6 +140,10 @@ const Bookings = () => {
                 <SortableHeader label="Date" sortKey="preferredDate" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Slot" sortKey="preferredSlot" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Duration" sortKey="trainingDuration" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Exam Date" sortKey="examDate" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Level" sortKey="experienceLevel" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Failures" sortKey="failures" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Lessons" sortKey="lessonsCompleted" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Status" sortKey="status" sortConfig={sortConfig} onSort={requestSort} />
                 <th>Actions</th>
               </tr>
@@ -152,6 +156,10 @@ const Bookings = () => {
                   <td>{booking.preferredDate}</td>
                   <td>{booking.preferredSlot}</td>
                   <td>{booking.trainingDuration} min</td>
+                  <td>{booking.examDate ? new Date(booking.examDate).toLocaleDateString() : <span className="no-exam">None</span>}</td>
+                  <td>{booking.experienceLevel || '-'}</td>
+                  <td>{booking.failures}</td>
+                  <td>{booking.lessonsCompleted}</td>
                   <td>
                     <select
                       value={booking.status}

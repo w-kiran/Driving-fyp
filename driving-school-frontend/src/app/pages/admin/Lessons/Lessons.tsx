@@ -176,6 +176,7 @@ const Lessons = () => {
                 <SortableHeader label="Instructor" sortKey="instructor.name" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Date" sortKey="scheduledDate" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Slot" sortKey="slot" sortConfig={sortConfig} onSort={requestSort} />
+                <SortableHeader label="Vehicle" sortKey="vehicle.name" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Duration" sortKey="trainingDuration" sortConfig={sortConfig} onSort={requestSort} />
                 <SortableHeader label="Status" sortKey="status" sortConfig={sortConfig} onSort={requestSort} />
                 <th>Actions</th>
@@ -202,6 +203,7 @@ const Lessons = () => {
                   <td>{lesson.instructor?.name || 'N/A'}</td>
                   <td>{lesson.scheduledDate || '-'}</td>
                   <td>{lesson.slot} ({getSlotTimeRange(lesson.slot)})</td>
+                  <td>{lesson.vehicle?.name || '-'} <span className="vehicle-number-badge">{lesson.vehicle?.vehicleNumber || ''}</span></td>
                   <td>{lesson.trainingDuration} min</td>
                   <td>
                     <span className={`badge badge-${lesson.status.toLowerCase()}`}>

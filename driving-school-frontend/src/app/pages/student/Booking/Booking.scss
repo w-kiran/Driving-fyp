@@ -183,18 +183,60 @@
   color: $text-muted;
 }
 
-.date-card-count {
-  font-size: 10px;
+.date-card-types {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.date-card-type {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 9px;
   color: #4caf50;
   font-weight: 500;
-  margin-top: 4px;
-  padding: 2px 6px;
-  border-radius: 8px;
-  background: rgba(#4caf50, 0.1);
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(#4caf50, 0.08);
+  line-height: 1.4;
 
   &.full {
-    background: rgba(#c62828, 0.15);
+    color: #c62828;
+    background: rgba(#c62828, 0.1);
   }
+
+  &.active-type {
+    background: rgba($primary-color, 0.12);
+    color: $primary-color;
+    font-weight: 600;
+  }
+
+  .type-icon {
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  .type-count {
+    font-size: 9px;
+  }
+}
+
+.date-card-partial {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-size: 7px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(#ff9800, 0.15);
+  color: #e65100;
+  letter-spacing: 0.3px;
 }
 
 .date-card-badge {

@@ -101,6 +101,7 @@ export const generateSchedule = async (req: Request, res: Response) => {
       priorityRank: number;
       bookingId: number;
       studentId: number;
+      studentName: string;
       examDate: string | null;
       failures: number;
       lessonsCompleted: number;
@@ -202,10 +203,12 @@ export const generateSchedule = async (req: Request, res: Response) => {
         });
       }
 
+      const studentObj = studentMap.get(booking.studentId);
       results.push({
         priorityRank: typeRank,
         bookingId: booking.id,
         studentId: booking.studentId,
+        studentName: studentObj?.name ?? "Unknown",
         examDate: booking.examDate?.toISOString() ?? null,
         failures: booking.failures,
         lessonsCompleted: booking.lessonsCompleted,

@@ -3,7 +3,35 @@ import type { AuthRequest } from "../../middleware/auth.middleware.js";
 import prisma from "../../config/db.js";
 import { parseSortParams } from "../../utils/sortHelper.js";
 
-const MAX_BOOKINGS_PER_DAY = 132;
+type VehicleTypeKey = "CAR" | "BIKE" | "SCOOTER";
+
+const SLOTS_PER_DAY = 12;
+
+/**
+ * Dynamically calculate max bookings per day PER VEHICLE TYPE,
+ * based on active instructors and active vehicles of each type.
+ * Per-type capacity = min(available instructors, active vehicles of that type) × slots
+ */
+const getMaxBookingsPerDay = async (): Promise<{
+  perType: Record<VehicleTypeKey, number>;
+  total: number;
+}> => {
+  const [activeInstructors, carCount, bikeCount, scooterCount] = await Promise.all([
+    prisma.instructor.count({ where: { available: true } }),
+    prisma.vehicle.count({ where: { active: true, type: "CAR" } }),
+    prisma.vehicle.count({ where: { active: true, type: "BIKE" } }),
+    prisma.vehicle.count({ where: { active: true, type: "SCOOTER" } }),
+  ]);
+
+  const car = Math.min(activeInstructors, carCount) * SLOTS_PER_DAY;
+  const bike = Math.min(activeInstructors, bikeCount) * SLOTS_PER_DAY;
+  const scooter = Math.min(activeInstructors, scooterCount) * SLOTS_PER_DAY;
+
+  return {
+    perType: { CAR: car, BIKE: bike, SCOOTER: scooter },
+    total: activeInstructors * SLOTS_PER_DAY,
+  };
+};
 
 interface BookingRequest {
   preferredSlot: "SLOT_1" | "SLOT_2" | "SLOT_3" | "SLOT_4" | "SLOT_5" | "SLOT_6" | "SLOT_7" | "SLOT_8" | "SLOT_9" | "SLOT_10" | "SLOT_11" | "SLOT_12";
@@ -87,16 +115,19 @@ export const requestNewLesson = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: "You can only book a maximum of 3 lessons per day" });
     }
 
-    // Check global daily limit (max 132 bookings across all students per day)
-    const globalBookingCount = await prisma.booking.count({
+    // Check per-vehicle-type daily limit
+    const typeBookingCount = await prisma.booking.count({
       where: {
         preferredDate,
+        vehicleType: vehicleType as VehicleTypeKey,
         status: { not: "CANCELLED" },
       },
     });
 
-    if (globalBookingCount >= MAX_BOOKINGS_PER_DAY) {
-      return res.status(400).json({ message: `This date is fully booked (${MAX_BOOKINGS_PER_DAY} max). Please select another date.` });
+    const maxPerType = await getMaxBookingsPerDay();
+    const typeMax = maxPerType.perType[vehicleType as VehicleTypeKey];
+    if (typeBookingCount >= typeMax) {
+      return res.status(400).json({ message: `${vehicleType} slots are fully booked for this date (${typeMax} max). Please select another date or vehicle type.` });
     }
 
     const booking = await prisma.booking.create({
@@ -237,17 +268,21 @@ export const editBooking = async (req: AuthRequest, res: Response) => {
       }
     }
 
-    // Check global daily limit if date is being changed
+    // Check per-vehicle-type daily limit if date or vehicle type is being changed
     if (preferredDate && preferredDate !== booking.preferredDate) {
-      const globalBookingCount = await prisma.booking.count({
+      const effectiveType = (vehicleType || booking.vehicleType) as VehicleTypeKey;
+      const typeBookingCount = await prisma.booking.count({
         where: {
           preferredDate,
+          vehicleType: effectiveType,
           status: { not: "CANCELLED" },
         },
       });
 
-      if (globalBookingCount >= MAX_BOOKINGS_PER_DAY) {
-        return res.status(400).json({ message: `This date is fully booked (${MAX_BOOKINGS_PER_DAY} max). Please select another date.` });
+      const maxPerType = await getMaxBookingsPerDay();
+      const typeMax = maxPerType.perType[effectiveType];
+      if (typeBookingCount >= typeMax) {
+        return res.status(400).json({ message: `${effectiveType} slots are fully booked for this date (${typeMax} max). Please select another date or vehicle type.` });
       }
     }
 
@@ -296,9 +331,9 @@ export const getDailyBookingCounts = async (_req: AuthRequest, res: Response) =>
       dates.push(`${year}-${month}-${day}`);
     }
 
-    // Count non-cancelled bookings per date in the range
+    // Count non-cancelled bookings per date AND per vehicle type in the range
     const counts = await prisma.booking.groupBy({
-      by: ["preferredDate"],
+      by: ["preferredDate", "vehicleType"],
       where: {
         preferredDate: { in: dates },
         status: { not: "CANCELLED" },
@@ -306,14 +341,30 @@ export const getDailyBookingCounts = async (_req: AuthRequest, res: Response) =>
       _count: { id: true },
     });
 
-    const result: Record<string, { count: number; isFull: boolean }> = {};
+    const { perType: maxPerType } = await getMaxBookingsPerDay();
+    const vehicleTypes: VehicleTypeKey[] = ["CAR", "BIKE", "SCOOTER"];
+
+    const result: Record<
+      string,
+      {
+        CAR: { count: number; isFull: boolean; max: number };
+        BIKE: { count: number; isFull: boolean; max: number };
+        SCOOTER: { count: number; isFull: boolean; max: number };
+      }
+    > = {};
+
     dates.forEach((date) => {
-      const found = counts.find((c) => c.preferredDate === date);
-      const count = found?._count.id || 0;
-      result[date] = { count, isFull: count >= MAX_BOOKINGS_PER_DAY };
+      const perType: Record<string, { count: number; isFull: boolean; max: number }> = {};
+      for (const vt of vehicleTypes) {
+        const found = counts.find((c) => c.preferredDate === date && c.vehicleType === vt);
+        const count = found?._count.id || 0;
+        const max = maxPerType[vt];
+        perType[vt] = { count, isFull: count >= max, max };
+      }
+      result[date] = perType as any;
     });
 
-    res.json({ dailyCounts: result, maxBookingsPerDay: MAX_BOOKINGS_PER_DAY });
+    res.json({ dailyCounts: result, maxPerType });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

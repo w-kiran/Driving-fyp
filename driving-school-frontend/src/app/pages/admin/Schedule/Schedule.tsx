@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
-import { fetchBookings, generateSchedule, cancelSchedule, fetchLessons } from '@/store/slices/adminSlice'
+import { fetchBookings, generateSchedule, cancelSchedule, fetchLessons, setScheduleResults } from '@/store/slices/adminSlice'
 import { getSlotTimeRange } from '@/utils/slotTimes'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useServerSort } from '@/hooks/useServerSort'
@@ -10,6 +10,8 @@ import SortableHeader from '@/components/SortableHeader/SortableHeader'
 import type { VehicleType } from '@/types'
 import toast from 'react-hot-toast'
 import './Schedule.scss'
+
+const STORAGE_KEY = 'scheduleResults'
 
 const VEHICLE_TYPES: VehicleType[] = ['CAR', 'BIKE', 'SCOOTER']
 const VEHICLE_LABELS: Record<VehicleType, string> = { CAR: 'Car', BIKE: 'Bike', SCOOTER: 'Scooter' }
@@ -40,7 +42,19 @@ const Schedule = () => {
     'asc',
   )
 
+  // Restore schedule results from localStorage on mount
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          dispatch(setScheduleResults(parsed))
+        }
+      }
+    } catch {
+      // Ignore parse errors
+    }
     dispatch(fetchLessons())
   }, [dispatch])
 
@@ -96,6 +110,12 @@ const Schedule = () => {
     const result = await dispatch(generateSchedule())
     if (generateSchedule.fulfilled.match(result)) {
       toast.success(`Schedule generated! ${result.payload.scheduled} scheduled, ${result.payload.failed} failed`)
+      // Persist results to localStorage so they survive page refresh
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(result.payload.results))
+      } catch {
+        // Ignore storage errors
+      }
       fetchSortedBookings(pendingSortConfig.key, pendingSortConfig.direction)
       dispatch(fetchLessons())
     } else {
@@ -110,6 +130,12 @@ const Schedule = () => {
     const result = await dispatch(cancelSchedule())
     if (cancelSchedule.fulfilled.match(result)) {
       toast.success(result.payload.message)
+      // Clear persisted results
+      try {
+        localStorage.removeItem(STORAGE_KEY)
+      } catch {
+        // Ignore storage errors
+      }
       fetchSortedBookings(pendingSortConfig.key, pendingSortConfig.direction)
       dispatch(fetchLessons())
     } else {
@@ -217,6 +243,7 @@ const Schedule = () => {
               <tr>
                 <SortableHeader label="Priority" sortKey="priorityRank" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
                 <SortableHeader label="Booking" sortKey="bookingId" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
+                <SortableHeader label="Student" sortKey="studentName" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
                 <SortableHeader label="Exam Date" sortKey="examDate" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
                 <SortableHeader label="Failures" sortKey="failures" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
                 <SortableHeader label="Lessons" sortKey="lessonsCompleted" sortConfig={resultsSort.sortConfig} onSort={resultsSort.requestSort} />
@@ -229,7 +256,7 @@ const Schedule = () => {
             <tbody>
               {resultsSort.sortedData.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="no-results">No results match your search</td>
+                  <td colSpan={10} className="no-results">No results match your search</td>
                 </tr>
               ) : (
                 resultsSort.sortedData.map((r, i) => (
@@ -241,6 +268,7 @@ const Schedule = () => {
                       </span>
                     </td>
                     <td>#{r.bookingId}</td>
+                    <td>{r.studentName || 'Unknown'}</td>
                     <td>{r.examDate ? new Date(r.examDate).toLocaleDateString() : <span className="no-exam">None</span>}</td>
                     <td>{r.failures}</td>
                     <td>{r.lessonsCompleted}</td>
@@ -278,6 +306,7 @@ const Schedule = () => {
             <thead>
               <tr>
                 <SortableHeader label="ID" sortKey="id" sortConfig={pendingSortConfig} onSort={pendingRequestSort} />
+                <SortableHeader label="Student" sortKey="student.user.name" sortConfig={pendingSortConfig} onSort={pendingRequestSort} />
                 <SortableHeader label="Preferred Date" sortKey="preferredDate" sortConfig={pendingSortConfig} onSort={pendingRequestSort} />
                 <SortableHeader label="Exam Date" sortKey="examDate" sortConfig={pendingSortConfig} onSort={pendingRequestSort} />
                 <SortableHeader label="Slot" sortKey="preferredSlot" sortConfig={pendingSortConfig} onSort={pendingRequestSort} />
@@ -288,12 +317,13 @@ const Schedule = () => {
             <tbody>
               {filteredPending.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="no-results">No bookings match your search</td>
+                  <td colSpan={7} className="no-results">No bookings match your search</td>
                 </tr>
               ) : (
                 filteredPending.map((booking) => (
                   <tr key={booking.id}>
                     <td>#{booking.id}</td>
+                    <td>{booking.student?.user?.name || booking.student?.name || 'Unknown'}</td>
                     <td>{booking.preferredDate}</td>
                     <td>{booking.examDate ? new Date(booking.examDate).toLocaleDateString() : <span className="no-exam">None</span>}</td>
                     <td>{booking.preferredSlot} ({getSlotTimeRange(booking.preferredSlot)})</td>

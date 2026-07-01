@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchPayments, refundPayment } from '@/store/slices/adminSlice'
@@ -13,13 +13,13 @@ const Payments = () => {
   const { payments, loading } = useAppSelector((state: RootState) => state.admin)
   const [filter, setFilter] = useState<'all' | 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED'>('all')
   const [searchTerm, setSearchTerm] = useState('')
-  const debouncedSearch = useDebounce(searchTerm, 300)
+  const debouncedSearch = useDebounce(searchTerm, 1000)
 
   const fetchSortedPayments = useCallback(
     (sortBy: string, sortOrder: 'asc' | 'desc') => {
-      dispatch(fetchPayments({ sortBy, sortOrder }))
+      dispatch(fetchPayments({ sortBy, sortOrder, search: debouncedSearch || undefined }))
     },
-    [dispatch],
+    [dispatch, debouncedSearch],
   )
 
   const { sortConfig, requestSort } = useServerSort(fetchSortedPayments, 'id', 'desc')
@@ -33,16 +33,7 @@ const Payments = () => {
 
   const filteredPayments = filter === 'all' ? payments : payments?.filter((p) => p.status === filter)
 
-  const displayedPayments = useMemo(() => {
-    if (!debouncedSearch) return filteredPayments
-    const q = debouncedSearch.toLowerCase()
-    return filteredPayments?.filter((p) =>
-      p.student?.user?.name?.toLowerCase().includes(q) ||
-      p.transactionId?.toLowerCase().includes(q) ||
-      String(p.id).includes(q) ||
-      String(p.bookingId).includes(q)
-    )
-  }, [filteredPayments, debouncedSearch])
+  const displayedPayments = filteredPayments
 
   return (
     <div className="payments-page">

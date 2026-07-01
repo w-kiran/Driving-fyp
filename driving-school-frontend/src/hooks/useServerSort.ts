@@ -32,11 +32,11 @@ export function useServerSort(
     direction: defaultDirection,
   })
 
-  // Trigger initial fetch with default sort on mount
+  // Fetch whenever fetchFn changes (covers mount + search + other deps inside fetchFn)
   useEffect(() => {
     fetchFn(defaultKey, defaultDirection)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [fetchFn])
 
   const requestSort = useCallback(
     (key: string) => {

@@ -168,7 +168,7 @@ export const toggleVehicleActive = createAsyncThunk<
 
 export const fetchBookings = createAsyncThunk<
   Booking[],
-  { sortBy?: string; sortOrder?: string } | undefined,
+  { sortBy?: string; sortOrder?: string; search?: string } | undefined,
   { rejectValue: string }
 >(
   'admin/fetchBookings',
@@ -177,6 +177,7 @@ export const fetchBookings = createAsyncThunk<
       const queryParams: Record<string, string> = {}
       if (params?.sortBy) queryParams.sortBy = params.sortBy
       if (params?.sortOrder) queryParams.sortOrder = params.sortOrder
+      if (params?.search) queryParams.search = params.search
       const response = await instance.get<{ bookings: Booking[] }>('/admin/bookings', {
         params: queryParams,
       })
@@ -217,7 +218,7 @@ export const updateBookingStatus = createAsyncThunk<
 
 export const fetchLessons = createAsyncThunk<
   Lesson[],
-  { sortBy?: string; sortOrder?: string } | undefined,
+  { sortBy?: string; sortOrder?: string; search?: string } | undefined,
   { rejectValue: string }
 >(
   'admin/fetchLessons',
@@ -226,6 +227,7 @@ export const fetchLessons = createAsyncThunk<
       const queryParams: Record<string, string> = {}
       if (params?.sortBy) queryParams.sortBy = params.sortBy
       if (params?.sortOrder) queryParams.sortOrder = params.sortOrder
+      if (params?.search) queryParams.search = params.search
       const response = await instance.get<{ lessons: Lesson[] }>('/admin/lessons', {
         params: queryParams,
       })
@@ -280,7 +282,7 @@ export const deleteLesson = createAsyncThunk<number, number, { rejectValue: stri
 
 export const fetchStudents = createAsyncThunk<
   Student[],
-  { sortBy?: string; sortOrder?: string } | undefined,
+  { sortBy?: string; sortOrder?: string; search?: string } | undefined,
   { rejectValue: string }
 >(
   'admin/fetchStudents',
@@ -289,6 +291,7 @@ export const fetchStudents = createAsyncThunk<
       const queryParams: Record<string, string> = {}
       if (params?.sortBy) queryParams.sortBy = params.sortBy
       if (params?.sortOrder) queryParams.sortOrder = params.sortOrder
+      if (params?.search) queryParams.search = params.search
       const response = await instance.get<{ students: Student[] }>('/admin/students', {
         params: queryParams,
       })
@@ -374,7 +377,7 @@ export const cancelSchedule = createAsyncThunk<
 
 export const fetchPayments = createAsyncThunk<
   Payment[],
-  { sortBy?: string; sortOrder?: string } | undefined,
+  { sortBy?: string; sortOrder?: string; search?: string } | undefined,
   { rejectValue: string }
 >(
   'admin/fetchPayments',
@@ -383,6 +386,7 @@ export const fetchPayments = createAsyncThunk<
       const queryParams: Record<string, string> = {}
       if (params?.sortBy) queryParams.sortBy = params.sortBy
       if (params?.sortOrder) queryParams.sortOrder = params.sortOrder
+      if (params?.search) queryParams.search = params.search
       const response = await instance.get<{ payments: Payment[] }>('/admin/payments', {
         params: queryParams,
       })

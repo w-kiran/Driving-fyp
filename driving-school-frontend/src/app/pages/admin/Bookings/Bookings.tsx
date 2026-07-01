@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchBookings, updateBookingStatus, deleteBooking } from '@/store/slices/adminSlice'
@@ -19,13 +19,13 @@ const Bookings = () => {
   const [filter, setFilter] = useState<'all' | 'PENDING' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED'>('all')
   const [activeType, setActiveType] = useState<VehicleType>('CAR')
   const [searchTerm, setSearchTerm] = useState('')
-  const debouncedSearch = useDebounce(searchTerm, 300)
+  const debouncedSearch = useDebounce(searchTerm, 1000)
 
   const fetchSortedBookings = useCallback(
     (sortBy: string, sortOrder: 'asc' | 'desc') => {
-      dispatch(fetchBookings({ sortBy, sortOrder }))
+      dispatch(fetchBookings({ sortBy, sortOrder, search: debouncedSearch || undefined }))
     },
-    [dispatch],
+    [dispatch, debouncedSearch],
   )
 
   const { sortConfig, requestSort } = useServerSort(fetchSortedBookings, 'id', 'desc')
@@ -35,15 +35,7 @@ const Bookings = () => {
 
   const byVehicle = filteredByStatus?.filter((b) => b.vehicleType === activeType)
 
-  const displayedBookings = useMemo(() => {
-    if (!debouncedSearch) return byVehicle
-    const q = debouncedSearch.toLowerCase()
-    return byVehicle?.filter((b) =>
-      b.student?.user?.name?.toLowerCase().includes(q) ||
-      String(b.id).includes(q) ||
-      b.preferredDate?.includes(q)
-    )
-  }, [byVehicle, debouncedSearch])
+  const displayedBookings = byVehicle
 
   const handleUpdateStatus = async (bookingId: number, newStatus: 'PENDING' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED') => {
     try {

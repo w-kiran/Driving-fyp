@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchLessons, updateLesson, deleteLesson, completeLesson, fetchInstructors, fetchVehicles } from '@/store/slices/adminSlice'
@@ -31,13 +31,13 @@ const Lessons = () => {
     trainingDuration: 60
   })
   const [searchTerm, setSearchTerm] = useState('')
-  const debouncedSearch = useDebounce(searchTerm, 300)
+  const debouncedSearch = useDebounce(searchTerm, 1000)
 
   const fetchSortedLessons = useCallback(
     (sortBy: string, sortOrder: 'asc' | 'desc') => {
-      dispatch(fetchLessons({ sortBy, sortOrder }))
+      dispatch(fetchLessons({ sortBy, sortOrder, search: debouncedSearch || undefined }))
     },
-    [dispatch],
+    [dispatch, debouncedSearch],
   )
 
   const { sortConfig, requestSort } = useServerSort(fetchSortedLessons, 'id', 'desc')
@@ -54,16 +54,7 @@ const Lessons = () => {
 
   const byVehicle = filteredByStatus?.filter((l) => l.vehicle?.type === activeType)
 
-  const displayedLessons = useMemo(() => {
-    if (!debouncedSearch) return byVehicle
-    const q = debouncedSearch.toLowerCase()
-    return byVehicle?.filter((l) =>
-      l.student?.user?.name?.toLowerCase().includes(q) ||
-      l.instructor?.name?.toLowerCase().includes(q) ||
-      String(l.id).includes(q) ||
-      l.scheduledDate?.includes(q)
-    )
-  }, [byVehicle, debouncedSearch])
+  const displayedLessons = byVehicle
 
   const handleEdit = (lesson: Lesson) => {
     setEditingLesson(lesson)

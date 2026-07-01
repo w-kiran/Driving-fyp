@@ -8,12 +8,23 @@ export const getAllBookings = async (req: Request, res: Response) => {
     const studentId = req.query.studentId as string | undefined;
     const date = req.query.date as string | undefined;
     const vehicleType = req.query.vehicleType as string | undefined;
+    const search = req.query.search as string | undefined;
 
     const where: any = {};
     if (status) where.status = status;
     if (studentId) where.studentId = parseInt(studentId);
     if (date) where.preferredDate = date;
     if (vehicleType) where.vehicleType = vehicleType;
+
+    if (search) {
+      const searchId = !isNaN(parseInt(search)) ? parseInt(search) : undefined;
+      const conditions: any[] = [
+        { preferredDate: { contains: search, mode: "insensitive" } },
+        { student: { user: { name: { contains: search, mode: "insensitive" } } } },
+      ];
+      if (searchId !== undefined) conditions.push({ id: searchId });
+      where.OR = conditions;
+    }
 
     const orderBy = parseSortParams(req, "id", "desc");
 

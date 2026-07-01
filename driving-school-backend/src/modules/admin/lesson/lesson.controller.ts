@@ -8,11 +8,23 @@ export const getAllLessons = async (req: Request, res: Response) => {
     const instructorId = req.query.instructorId as string | undefined;
     const date = req.query.date as string | undefined;
     const vehicleType = req.query.vehicleType as string | undefined;
+    const search = req.query.search as string | undefined;
 
     const where: any = {};
     if (status) where.status = status;
     if (instructorId) where.instructorId = parseInt(instructorId);
     if (vehicleType) where.vehicle = { type: vehicleType };
+
+    if (search) {
+      const searchId = !isNaN(parseInt(search)) ? parseInt(search) : undefined;
+      const conditions: any[] = [
+        { scheduledDate: { contains: search, mode: "insensitive" } },
+        { student: { user: { name: { contains: search, mode: "insensitive" } } } },
+        { instructor: { name: { contains: search, mode: "insensitive" } } },
+      ];
+      if (searchId !== undefined) conditions.push({ id: searchId });
+      where.OR = conditions;
+    }
 
     const orderBy = parseSortParams(req, "id", "desc");
 

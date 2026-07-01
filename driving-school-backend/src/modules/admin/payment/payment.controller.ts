@@ -43,9 +43,24 @@ export const createPayment = async (req: Request, res: Response) => {
 
 export const getAllPayments = async (req: Request, res: Response) => {
   try {
+    const search = req.query.search as string | undefined;
     const orderBy = parseSortParams(req, "createdAt", "desc");
 
+    const where: any = {};
+    if (search) {
+      const searchId = !isNaN(parseInt(search)) ? parseInt(search) : undefined;
+      const conditions: any[] = [
+        { transactionId: { contains: search, mode: "insensitive" } },
+        { student: { user: { name: { contains: search, mode: "insensitive" } } } },
+      ];
+      if (searchId !== undefined) {
+        conditions.push({ id: searchId }, { bookingId: searchId });
+      }
+      where.OR = conditions;
+    }
+
     const payments = await prisma.payment.findMany({
+      where,
       include: {
         student: { include: { user: { select: { name: true, email: true } } } },
         booking: true

@@ -13,7 +13,7 @@ import { useState, useEffect } from 'react'
  *   const debouncedSearch = useDebounce(search, 300)
  *   // use debouncedSearch for filtering/API calls
  */
-export function useDebounce<T>(value: T, delay: number = 300): T {
+export function useDebounce<T>(value: T, delay: number = 700): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value)
 
   useEffect(() => {

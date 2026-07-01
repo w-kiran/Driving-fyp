@@ -5,9 +5,25 @@ import { parseSortParams } from "../../../utils/sortHelper.js";
 
 export const getAllStudents = async (req: Request, res: Response) => {
   try {
+    const search = req.query.search as string | undefined;
     const orderBy = parseSortParams(req, "id", "desc");
 
+    const where: any = {};
+    if (search) {
+      const searchId = !isNaN(parseInt(search)) ? parseInt(search) : undefined;
+      const conditions: any[] = [
+        { name: { contains: search, mode: "insensitive" } },
+        { phone: { contains: search } },
+        { address: { contains: search, mode: "insensitive" } },
+        { user: { name: { contains: search, mode: "insensitive" } } },
+        { user: { email: { contains: search, mode: "insensitive" } } },
+      ];
+      if (searchId !== undefined) conditions.push({ id: searchId });
+      where.OR = conditions;
+    }
+
     const students = await prisma.student.findMany({
+      where,
       include: {
         user: { select: { id: true, name: true, email: true } },
         bookings: true,

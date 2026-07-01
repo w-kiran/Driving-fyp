@@ -12,21 +12,18 @@ const Students = () => {
   const dispatch = useAppDispatch()
   const { students, loading } = useAppSelector((state: RootState) => state.admin)
   const [searchTerm, setSearchTerm] = useState('')
-  const debouncedSearch = useDebounce(searchTerm, 300)
+  const debouncedSearch = useDebounce(searchTerm, 1000)
 
   const fetchSortedStudents = useCallback(
     (sortBy: string, sortOrder: 'asc' | 'desc') => {
-      dispatch(fetchStudents({ sortBy, sortOrder }))
+      dispatch(fetchStudents({ sortBy, sortOrder, search: debouncedSearch || undefined }))
     },
-    [dispatch],
+    [dispatch, debouncedSearch],
   )
 
   const { sortConfig, requestSort } = useServerSort(fetchSortedStudents, 'id', 'desc')
 
-  const displayedStudents = students?.filter((student) =>
-    student.user?.name?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-    student.user?.email?.toLowerCase().includes(debouncedSearch.toLowerCase())
-  ) || []
+  const displayedStudents = students || []
 
   const handleDelete = async (id: number) => {
     if (confirm('Are you sure you want to delete this student?')) {

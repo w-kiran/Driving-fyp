@@ -1,7 +1,8 @@
 import { ReactNode, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { fetchMyBookings, fetchMyLessons, fetchNotifications } from '@/store/slices/bookingSlice'
+import { fetchMyBookings, fetchMyLessons } from '@/store/slices/bookingSlice'
+import { fetchNotifications } from '@/store/slices/notificationSlice'
 import { logout } from '@/store/slices/authSlice'
 import toast from 'react-hot-toast'
 import './StudentLayout.scss'
@@ -22,7 +23,7 @@ const StudentLayout = ({ children }: LayoutProps) => {
   const location = useLocation()
   const navigate = useNavigate()
   const { user } = useAppSelector((state) => state.auth)
-  const { notifications } = useAppSelector((state) => state.booking)
+  const { notifications } = useAppSelector((state) => state.notifications)
 
   useEffect(() => {
     dispatch(fetchMyBookings())

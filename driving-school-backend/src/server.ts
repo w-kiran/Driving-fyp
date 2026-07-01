@@ -1,3 +1,19 @@
+import dotenv from "dotenv";
+dotenv.config();
+
+// Validate required environment variables at startup
+const REQUIRED_ENV_VARS = ["DATABASE_URL", "JWT_SECRET"];
+const missing: string[] = [];
+for (const key of REQUIRED_ENV_VARS) {
+  if (!process.env[key]) {
+    missing.push(key);
+  }
+}
+if (missing.length > 0) {
+  console.error(`Missing required environment variables: ${missing.join(", ")}`);
+  process.exit(1);
+}
+
 import app from "./app.js";
 
 app.get("/", (req, res) => {

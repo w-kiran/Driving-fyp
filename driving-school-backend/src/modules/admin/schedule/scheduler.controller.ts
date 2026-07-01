@@ -299,9 +299,6 @@ export const cancelSchedule = async (req: Request, res: Response) => {
       );
     }
 
-    // Unique student IDs whose bookings need reverting
-    const studentIds = [...new Set(lessons.map(l => l.studentId))];
-
     await prisma.$transaction(async (tx) => {
       // Delete lessons for tomorrow
       await tx.lesson.deleteMany({
@@ -311,11 +308,10 @@ export const cancelSchedule = async (req: Request, res: Response) => {
         }
       });
 
-      // Set SCHEDULED bookings back to PENDING
+      // Set SCHEDULED bookings back to PENDING (all SCHEDULED bookings for this date)
       await tx.booking.updateMany({
         where: {
           preferredDate: scheduleDate,
-          studentId: { in: studentIds },
           status: "SCHEDULED"
         },
         data: { status: "PENDING" }

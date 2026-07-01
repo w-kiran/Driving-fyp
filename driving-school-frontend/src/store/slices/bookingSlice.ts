@@ -1,11 +1,10 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import { instance } from '@/api/apiClient'
-import { Booking, Lesson, Notification } from '@/types'
+import { Booking, Lesson } from '@/types'
 
 interface BookingState {
   bookings: Booking[]
   lessons: Lesson[]
-  notifications: Notification[]
   loading: boolean
   error: string | null
 }
@@ -13,7 +12,6 @@ interface BookingState {
 const initialState: BookingState = {
   bookings: [],
   lessons: [],
-  notifications: [],
   loading: false,
   error: null,
 }
@@ -85,57 +83,6 @@ export const fetchMyLessons = createAsyncThunk<
   }
 )
 
-export const fetchNotifications = createAsyncThunk<Notification[], void, { rejectValue: string }>(
-  'booking/fetchNotifications',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await instance.get<{ notifications: Notification[] }>('/students/notifications')
-      return response.data.notifications
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } }
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch notifications')
-    }
-  }
-)
-
-export const markNotificationRead = createAsyncThunk<number, number, { rejectValue: string }>(
-  'booking/markNotificationRead',
-  async (id, { rejectWithValue }) => {
-    try {
-      await instance.put(`/students/notifications/${id}/read`)
-      return id
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } }
-      return rejectWithValue(error.response?.data?.message || 'Failed to mark notification as read')
-    }
-  }
-)
-
-export const markAllNotificationsRead = createAsyncThunk<void, void, { rejectValue: string }>(
-  'booking/markAllNotificationsRead',
-  async (_, { rejectWithValue }) => {
-    try {
-      await instance.put('/students/notifications/read-all')
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } }
-      return rejectWithValue(error.response?.data?.message || 'Failed to mark all notifications as read')
-    }
-  }
-)
-
-export const deleteNotification = createAsyncThunk<number, number, { rejectValue: string }>(
-  'booking/deleteNotification',
-  async (id, { rejectWithValue }) => {
-    try {
-      await instance.delete(`/students/notifications/${id}`)
-      return id
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } }
-      return rejectWithValue(error.response?.data?.message || 'Failed to delete notification')
-    }
-  }
-)
-
 export const editBooking = createAsyncThunk<
   Booking,
   { id: number; data: Partial<CreateBookingPayload> },
@@ -183,7 +130,6 @@ const bookingSlice = createSlice({
     resetBookingState: (state) => {
       state.bookings = []
       state.lessons = []
-      state.notifications = []
       state.error = null
     },
   },
@@ -223,9 +169,6 @@ const bookingSlice = createSlice({
         state.loading = false
         state.error = action.payload || 'Failed to fetch lessons'
       })
-      .addCase(fetchNotifications.fulfilled, (state, action: PayloadAction<Notification[]>) => {
-        state.notifications = action.payload
-      })
       .addCase(editBooking.fulfilled, (state, action: PayloadAction<Booking>) => {
         const index = state.bookings.findIndex((b) => b.id === action.payload.id)
         if (index !== -1) {
@@ -240,18 +183,6 @@ const bookingSlice = createSlice({
         if (index !== -1) {
           state.bookings[index].status = 'CANCELLED'
         }
-      })
-      .addCase(markNotificationRead.fulfilled, (state, action: PayloadAction<number>) => {
-        const notification = state.notifications.find((n) => n.id === action.payload)
-        if (notification) {
-          notification.read = true
-        }
-      })
-      .addCase(markAllNotificationsRead.fulfilled, (state) => {
-        state.notifications.forEach((n) => { n.read = true })
-      })
-      .addCase(deleteNotification.fulfilled, (state, action: PayloadAction<number>) => {
-        state.notifications = state.notifications.filter((n) => n.id !== action.payload)
       })
   },
 })

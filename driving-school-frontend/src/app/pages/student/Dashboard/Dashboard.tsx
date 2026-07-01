@@ -22,6 +22,7 @@ const Dashboard = () => {
   const { bookings, lessons, loading } = useAppSelector((state: RootState) => state.booking)
   const [activeType, setActiveType] = useState<VehicleType>('CAR')
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null)
+  const [savingEdit, setSavingEdit] = useState(false)
   const { errors: editErrors, validate: validateEdit, clearErrors: clearEditErrors } = useFormValidation(editBookingSchema)
   const [editForm, setEditForm] = useState({
     preferredSlot: 'SLOT_1' as 'SLOT_1' | 'SLOT_2' | 'SLOT_3' | 'SLOT_4' | 'SLOT_5' | 'SLOT_6' | 'SLOT_7' | 'SLOT_8' | 'SLOT_9' | 'SLOT_10' | 'SLOT_11' | 'SLOT_12',
@@ -41,8 +42,9 @@ const Dashboard = () => {
 
   const { sortConfig, requestSort } = useServerSort(fetchSortedBookings, 'preferredDate', 'desc')
 
-  // Fetch lessons once on mount (not sortable)
+  // Fetch bookings and lessons on mount
   useEffect(() => {
+    dispatch(fetchMyBookings())
     dispatch(fetchMyLessons())
   }, [dispatch])
 
@@ -62,7 +64,9 @@ const Dashboard = () => {
   const handleSaveEdit = async () => {
     if (!editingBooking) return
     if (!validateEdit(editForm)) return
+    setSavingEdit(true)
     const result = await dispatch(editBooking({ id: editingBooking.id, data: editForm }))
+    setSavingEdit(false)
     if (editBooking.fulfilled.match(result)) {
       toast.success('Booking updated successfully!')
       setEditingBooking(null)
@@ -350,8 +354,10 @@ const Dashboard = () => {
               />
             </div>
             <div className="modal-actions">
-              <button className="btn btn-primary" onClick={handleSaveEdit}>Save</button>
-              <button className="btn btn-secondary" onClick={() => setEditingBooking(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleSaveEdit} disabled={savingEdit}>
+                {savingEdit ? <span className="loading-spinner" /> : 'Save'}
+              </button>
+              <button className="btn btn-secondary" onClick={() => setEditingBooking(null)} disabled={savingEdit}>Cancel</button>
             </div>
           </div>
         </div>

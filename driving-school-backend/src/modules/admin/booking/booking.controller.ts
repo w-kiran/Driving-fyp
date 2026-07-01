@@ -52,7 +52,7 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
     const id = req.params.id as string;
     const { status } = req.body;
 
-    if (!["PENDING", "SCHEDULED", "COMPLETED"].includes(status)) {
+    if (!["PENDING", "SCHEDULED", "COMPLETED", "CANCELLED"].includes(status)) {
       return res.status(400).json({ message: "Invalid booking status" });
     }
 
@@ -64,7 +64,7 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
 
     const updated = await prisma.booking.update({
       where: { id: parseInt(id) },
-      data: { status: status as "PENDING" | "SCHEDULED" | "COMPLETED" }
+      data: { status: status as "PENDING" | "SCHEDULED" | "COMPLETED" | "CANCELLED" }
     });
 
     res.json({ message: "Booking updated successfully", booking: updated });

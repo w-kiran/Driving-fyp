@@ -1,13 +1,13 @@
 import { useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
-import { fetchNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification } from '@/store/slices/bookingSlice'
+import { fetchNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification } from '@/store/slices/notificationSlice'
 import toast from 'react-hot-toast'
 import './Notifications.scss'
 
 const Notifications = () => {
   const dispatch = useAppDispatch()
-  const { notifications, loading } = useAppSelector((state: RootState) => state.booking)
+  const { notifications, loading } = useAppSelector((state: RootState) => state.notifications)
 
   useEffect(() => {
     dispatch(fetchNotifications())

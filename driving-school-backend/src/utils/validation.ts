@@ -17,7 +17,7 @@ const experienceLevelEnum = z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]);
 const instructorLevelEnum = z.enum(["JUNIOR", "INTERMEDIATE", "SENIOR"]);
 
 // ─── Booking status enum ──────────────────────────────────
-const bookingStatusEnum = z.enum(["PENDING", "SCHEDULED", "COMPLETED"]);
+const bookingStatusEnum = z.enum(["PENDING", "SCHEDULED", "COMPLETED", "CANCELLED"]);
 
 // ─── Training duration ────────────────────────────────────
 const trainingDurationEnum = z.union([z.literal(30), z.literal(60)]);

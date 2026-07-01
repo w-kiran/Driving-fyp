@@ -425,3 +425,91 @@ export const getMyLessons = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const getMyProgress = async (req: AuthRequest, res: Response) => {
+  try {
+    const student = await prisma.student.findUnique({
+      where: { userId: req.user!.id },
+    });
+    if (!student) return res.status(404).json({ message: "Student not found" });
+
+    const [lessons, bookings] = await Promise.all([
+      prisma.lesson.findMany({
+        where: { studentId: student.id },
+        include: { instructor: true },
+        orderBy: { createdAt: "desc" }
+      }),
+      prisma.booking.findMany({
+        where: { studentId: student.id },
+        orderBy: { createdAt: "desc" }
+      })
+    ]);
+
+    // Stats
+    const totalLessons = lessons.length;
+    const completedLessons = lessons.filter(l => l.status === "COMPLETED");
+    const scheduledLessons = lessons.filter(l => l.status === "SCHEDULED");
+    const cancelledLessons = lessons.filter(l => l.status === "CANCELLED");
+
+    // Total training minutes
+    const totalMinutes = completedLessons.reduce((sum, l) => sum + (l.trainingDuration || 0), 0);
+
+    // Instructors taught by
+    const instructorMap: Record<number, { name: string; count: number }> = {};
+    for (const lesson of lessons) {
+      if (lesson.instructor) {
+        const existing = instructorMap[lesson.instructorId];
+        if (existing) {
+          existing.count++;
+        } else {
+          instructorMap[lesson.instructorId] = { name: lesson.instructor.name, count: 1 };
+        }
+      }
+    }
+
+    // Lesson status distribution (for chart)
+    const statusDistribution = [
+      { status: "SCHEDULED", count: scheduledLessons.length },
+      { status: "COMPLETED", count: completedLessons.length },
+      { status: "CANCELLED", count: cancelledLessons.length },
+    ].filter(d => d.count > 0);
+
+    // Recent lessons (last 10)
+    const recentLessons = lessons.slice(0, 10).map(l => ({
+      id: l.id,
+      date: l.scheduledDate || l.createdAt.toISOString().split("T")[0],
+      slot: l.slot,
+      duration: l.trainingDuration,
+      status: l.status,
+      instructorName: l.instructor?.name || "Unknown",
+      notes: l.notes
+    }));
+
+    // Preferred vehicle types from bookings
+    const vehicleTypeCounts: Record<string, number> = {};
+    for (const b of bookings) {
+      vehicleTypeCounts[b.vehicleType] = (vehicleTypeCounts[b.vehicleType] || 0) + 1;
+    }
+
+    const progress = {
+      summary: {
+        totalLessons,
+        completedLessons: completedLessons.length,
+        scheduledLessons: scheduledLessons.length,
+        cancelledLessons: cancelledLessons.length,
+        totalTrainingHours: Math.round((totalMinutes / 60) * 10) / 10,
+        totalTrainingMinutes: totalMinutes,
+        completionRate: totalLessons > 0 ? Math.round((completedLessons.length / totalLessons) * 100) : 0,
+      },
+      statusDistribution,
+      recentLessons,
+      instructors: Object.values(instructorMap).sort((a, b) => b.count - a.count),
+      vehicleTypeCounts: Object.entries(vehicleTypeCounts).map(([type, count]) => ({ type, count })),
+    };
+
+    res.json({ progress });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

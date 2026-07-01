@@ -11,6 +11,7 @@ import StudentDashboard from '@/app/pages/student/Dashboard/Dashboard'
 import StudentBooking from '@/app/pages/student/Booking/Booking'
 import StudentLessons from '@/app/pages/student/Lessons/Lessons'
 import StudentNotifications from '@/app/pages/student/Notifications/Notifications'
+import StudentProgress from '@/app/pages/student/Progress/Progress'
 import AdminLayout from '@/app/layouts/AdminLayout'
 import AdminDashboard from '@/app/pages/admin/Dashboard/Dashboard'
 import AdminInstructors from '@/app/pages/admin/Instructors/Instructors'
@@ -112,6 +113,16 @@ export const Routes = [
       <ProtectedRoute allowedRole="STUDENT">
         <StudentLayout>
           <StudentNotifications />
+        </StudentLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/progress',
+    element: (
+      <ProtectedRoute allowedRole="STUDENT">
+        <StudentLayout>
+          <StudentProgress />
         </StudentLayout>
       </ProtectedRoute>
     ),

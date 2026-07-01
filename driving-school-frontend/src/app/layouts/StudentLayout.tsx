@@ -15,6 +15,7 @@ const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: '📊' },
   { path: '/booking', label: 'Book Lesson', icon: '📅' },
   { path: '/lessons', label: 'My Lessons', icon: '🚗' },
+  { path: '/progress', label: 'My Progress', icon: '📈' },
   { path: '/notifications', label: 'Notifications', icon: '🔔' },
 ]
 

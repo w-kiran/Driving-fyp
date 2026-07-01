@@ -82,6 +82,27 @@ export interface Lesson {
   vehicle?: Vehicle
 }
 
+export interface ChartDay {
+  date: string
+  total: number
+  CAR: number
+  BIKE: number
+  SCOOTER: number
+}
+
+export interface ChartCount {
+  status?: string
+  type?: string
+  count: number
+}
+
+export interface DashboardCharts {
+  bookingTrends: ChartDay[]
+  lessonDistribution: ChartCount[]
+  bookingDistribution: ChartCount[]
+  bookingByType: Array<{ type: string; count: number }>
+}
+
 export interface DashboardStats {
   students: number
   instructors: number
@@ -99,6 +120,7 @@ export interface DashboardStats {
     dailyLessonCount: number
     totalLessons: number
   }>
+  charts?: DashboardCharts
 }
 
 export interface Notification {

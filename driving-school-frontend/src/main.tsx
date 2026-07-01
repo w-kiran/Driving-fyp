@@ -1,7 +1,7 @@
 import ReactDOM from 'react-dom/client'
 import { Provider } from 'react-redux'
 import { Toaster } from 'react-hot-toast'
-import { HashRouter, useRoutes } from 'react-router-dom'
+import { BrowserRouter, useRoutes } from 'react-router-dom'
 
 import { store } from './store'
 import './app/_main.scss'
@@ -19,11 +19,11 @@ const App = () => {
 }
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  <HashRouter>
+  <BrowserRouter>
     <Provider store={store}>
       <AuthProvider>
         <App />
       </AuthProvider>
     </Provider>
-  </HashRouter>,
+  </BrowserRouter>,
 )

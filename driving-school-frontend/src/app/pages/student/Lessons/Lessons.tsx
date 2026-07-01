@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchMyLessons } from '@/store/slices/bookingSlice'
@@ -27,9 +28,9 @@ const Lessons = () => {
         <div className="empty-state card">
           <h3>No lessons yet</h3>
           <p>Once the admin generates a schedule, your lessons will appear here.</p>
-          <a href="/booking" className="btn btn-primary">
+          <Link to="/booking" className="btn btn-primary">
             Book a Lesson First
-          </a>
+          </Link>
         </div>
       </div>
     )

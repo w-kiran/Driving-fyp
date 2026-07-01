@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchDashboardStats } from '@/store/slices/adminSlice'
+import { useDebounce } from '@/hooks/useDebounce'
 import { useSort } from '@/hooks/useSort'
 import SortableHeader from '@/components/SortableHeader/SortableHeader'
 import './Dashboard.scss'
@@ -9,6 +10,8 @@ import './Dashboard.scss'
 const AdminDashboard = () => {
   const dispatch = useAppDispatch()
   const { stats, loading } = useAppSelector((state: RootState) => state.admin)
+  const [searchTerm, setSearchTerm] = useState('')
+  const debouncedSearch = useDebounce(searchTerm, 300)
 
   useEffect(() => {
     dispatch(fetchDashboardStats())
@@ -16,6 +19,14 @@ const AdminDashboard = () => {
 
   const instructorLoad = stats?.instructorLoad || []
   const { sortedData, sortConfig, requestSort } = useSort(instructorLoad, 'dailyLessonCount', 'desc')
+
+  const filteredInstructors = useMemo(() => {
+    if (!debouncedSearch) return sortedData
+    const q = debouncedSearch.toLowerCase()
+    return sortedData.filter((inst) =>
+      inst.name?.toLowerCase().includes(q)
+    )
+  }, [sortedData, debouncedSearch])
 
   if (loading || !stats) {
     return (
@@ -79,7 +90,16 @@ const AdminDashboard = () => {
 
       {instructorLoad.length > 0 && (
         <div className="instructor-load card">
-          <h3>Instructor Workload</h3>
+          <div className="instructor-load__header">
+            <h3>Instructor Workload</h3>
+            <input
+              type="text"
+              placeholder="Search instructors..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
           <table className="load-table">
             <thead>
               <tr>
@@ -89,13 +109,19 @@ const AdminDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedData.map((instructor) => (
-                <tr key={instructor.id}>
-                  <td>{instructor.name}</td>
-                  <td>{instructor.dailyLessonCount}</td>
-                  <td>{instructor.totalLessons}</td>
+              {filteredInstructors.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="no-results">No instructors match your search</td>
                 </tr>
-              ))}
+              ) : (
+                filteredInstructors.map((instructor) => (
+                  <tr key={instructor.id}>
+                    <td>{instructor.name}</td>
+                    <td>{instructor.dailyLessonCount}</td>
+                    <td>{instructor.totalLessons}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

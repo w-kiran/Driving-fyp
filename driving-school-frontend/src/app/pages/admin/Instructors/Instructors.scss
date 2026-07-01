@@ -258,3 +258,39 @@
     }
   }
 }
+
+@media (max-width: 1024px) {
+  .instructors-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .instructors-page {
+    .page-header {
+      flex-direction: column;
+      gap: 12px;
+      align-items: stretch;
+
+      h2 { font-size: 20px; }
+    }
+
+    .instructor-card {
+      .instructor-header {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+      }
+    }
+  }
+
+  .instructors-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .modal {
+    width: 95%;
+    padding: 16px;
+  }
+}

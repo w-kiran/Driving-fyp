@@ -1,4 +1,4 @@
-import { ReactNode, useEffect } from 'react'
+import { ReactNode, useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import {
@@ -33,6 +33,12 @@ const AdminLayout = ({ children }: LayoutProps) => {
   const location = useLocation()
   const navigate = useNavigate()
   const { user } = useAppSelector((state) => state.auth)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [location.pathname])
 
   useEffect(() => {
     dispatch(fetchInstructors())
@@ -51,7 +57,10 @@ const AdminLayout = ({ children }: LayoutProps) => {
 
   return (
     <div className="admin-layout">
-      <aside className="sidebar">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
+
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <Link to="/admin" className="logo">
             DriveSmart
@@ -89,6 +98,11 @@ const AdminLayout = ({ children }: LayoutProps) => {
       <main className="main-content">
         <header className="content-header">
           <div className="header-left">
+            <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
+              <span className="hamburger-line" />
+              <span className="hamburger-line" />
+              <span className="hamburger-line" />
+            </button>
             <h1 className="page-title">
               {navItems.find((item) => item.path === location.pathname)?.label || 'Dashboard'}
             </h1>

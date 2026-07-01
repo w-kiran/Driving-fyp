@@ -1,8 +1,9 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchLessons, updateLesson, deleteLesson, completeLesson, fetchInstructors, fetchVehicles } from '@/store/slices/adminSlice'
 import { useFormValidation } from '@/hooks/useFormValidation'
+import { useDebounce } from '@/hooks/useDebounce'
 import { editLessonSchema } from '@/utils/validation'
 import FieldError from '@/components/FieldError/FieldError'
 import { getSlotTimeRange } from '@/utils/slotTimes'
@@ -29,6 +30,8 @@ const Lessons = () => {
     vehicleId: 0,
     trainingDuration: 60
   })
+  const [searchTerm, setSearchTerm] = useState('')
+  const debouncedSearch = useDebounce(searchTerm, 300)
 
   const fetchSortedLessons = useCallback(
     (sortBy: string, sortOrder: 'asc' | 'desc') => {
@@ -49,7 +52,18 @@ const Lessons = () => {
     ? lessons
     : lessons?.filter((l) => l.status === filter)
 
-  const displayedLessons = filteredByStatus?.filter((l) => l.vehicle?.type === activeType)
+  const byVehicle = filteredByStatus?.filter((l) => l.vehicle?.type === activeType)
+
+  const displayedLessons = useMemo(() => {
+    if (!debouncedSearch) return byVehicle
+    const q = debouncedSearch.toLowerCase()
+    return byVehicle?.filter((l) =>
+      l.student?.user?.name?.toLowerCase().includes(q) ||
+      l.instructor?.name?.toLowerCase().includes(q) ||
+      String(l.id).includes(q) ||
+      l.scheduledDate?.includes(q)
+    )
+  }, [byVehicle, debouncedSearch])
 
   const handleEdit = (lesson: Lesson) => {
     setEditingLesson(lesson)
@@ -101,7 +115,16 @@ const Lessons = () => {
   return (
     <div className="lessons-page">
       <div className="page-header">
-        <h2>Lessons Management</h2>
+        <div className="page-header__top">
+          <h2>Lessons Management</h2>
+          <input
+            type="text"
+            placeholder="Search lessons..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+        </div>
         <div className="filter-tabs">
           {(['all', 'SCHEDULED', 'COMPLETED'] as const).map((f) => (
             <button
@@ -134,6 +157,10 @@ const Lessons = () => {
 
       {loading ? (
         <div className="loading-container"><div className="spinner" /></div>
+      ) : (searchTerm && displayedLessons?.length === 0) ? (
+        <div className="empty-state card">
+          <h3>No lessons match your search</h3>
+        </div>
       ) : displayedLessons?.length === 0 ? (
         <div className="empty-state card">
           <h3>No {VEHICLE_LABELS[activeType]} lessons found</h3>

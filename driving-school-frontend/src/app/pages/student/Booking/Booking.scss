@@ -155,8 +155,8 @@
     }
   }
 
-  // Today badge
-  &.today {
+  // Tomorrow badge
+  &.tomorrow {
     .date-card-badge {
       display: inline-block;
     }
@@ -210,4 +210,36 @@
   background: rgba($primary-color, 0.12);
   color: $primary-color;
   letter-spacing: 0.3px;
+}
+
+@media (max-width: 768px) {
+  .booking-form-container {
+    h2 { font-size: 20px; }
+  }
+
+  .booking-form {
+    .form-row {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+  }
+
+  .date-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .date-card {
+    padding: 10px 6px;
+  }
+
+  .date-card-num {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .date-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }

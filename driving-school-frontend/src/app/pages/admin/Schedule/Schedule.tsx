@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchBookings, generateSchedule, cancelSchedule, fetchLessons } from '@/store/slices/adminSlice'
 import { getSlotTimeRange } from '@/utils/slotTimes'
+import { useDebounce } from '@/hooks/useDebounce'
 import { useServerSort } from '@/hooks/useServerSort'
 import { useSort } from '@/hooks/useSort'
 import SortableHeader from '@/components/SortableHeader/SortableHeader'
@@ -12,12 +13,18 @@ import './Schedule.scss'
 
 const VEHICLE_TYPES: VehicleType[] = ['CAR', 'BIKE', 'SCOOTER']
 const VEHICLE_LABELS: Record<VehicleType, string> = { CAR: 'Car', BIKE: 'Bike', SCOOTER: 'Scooter' }
-const VEHICLE_ICONS: Record<VehicleType, string> = { CAR: '🚗', BIKE: '🏍️', SCOOTER: '🛵' }
+const VEHICLE_ICONS: Record<VehicleType, string> = { CAR: '\u{1F697}', BIKE: '\u{1F3CD}\uFE0F', SCOOTER: '\u{1F6F5}' }
 
 const Schedule = () => {
   const dispatch = useAppDispatch()
   const { bookings, lessons, scheduleGenerating, scheduleResults, error } = useAppSelector((state: RootState) => state.admin)
   const [activeType, setActiveType] = useState<VehicleType>('CAR')
+
+  // Search state
+  const [pendingSearch, setPendingSearch] = useState('')
+  const [resultsSearch, setResultsSearch] = useState('')
+  const debouncedPendingSearch = useDebounce(pendingSearch, 300)
+  const debouncedResultsSearch = useDebounce(resultsSearch, 300)
 
   // Server-side sort for pending bookings
   const fetchSortedBookings = useCallback(
@@ -44,8 +51,32 @@ const Schedule = () => {
   const pendingByType = pendingBookings.filter((b) => b.vehicleType === activeType)
   const resultsByType = scheduleResults.filter((r) => r.vehicleType === activeType)
 
+  // Search filter for pending bookings
+  const filteredPending = useMemo(() => {
+    if (!debouncedPendingSearch) return pendingByType
+    const q = debouncedPendingSearch.toLowerCase()
+    return pendingByType.filter((b) =>
+      String(b.id).includes(q) ||
+      b.preferredDate?.includes(q) ||
+      b.preferredSlot?.toLowerCase().includes(q) ||
+      b.experienceLevel?.toLowerCase().includes(q)
+    )
+  }, [pendingByType, debouncedPendingSearch])
+
+  // Search filter for results
+  const filteredResults = useMemo(() => {
+    if (!debouncedResultsSearch) return resultsByType
+    const q = debouncedResultsSearch.toLowerCase()
+    return resultsByType.filter((r) =>
+      String(r.bookingId).includes(q) ||
+      r.instructorName?.toLowerCase().includes(q) ||
+      r.assignedDate?.includes(q) ||
+      r.preferredDate?.includes(q)
+    )
+  }, [resultsByType, debouncedResultsSearch])
+
   // Client-side sort for results (in-memory data from generate API)
-  const resultsSort = useSort(resultsByType, 'priorityRank', 'asc')
+  const resultsSort = useSort(filteredResults, 'priorityRank', 'asc')
 
   // Compute tomorrow's date (same logic as backend getTomorrow)
   const getTomorrowStr = () => {
@@ -173,6 +204,13 @@ const Schedule = () => {
         <div className="schedule-results card">
           <div className="results-header">
             <h3>{VEHICLE_LABELS[activeType]} Scheduling Results</h3>
+            <input
+              type="text"
+              placeholder="Search results..."
+              value={resultsSearch}
+              onChange={(e) => setResultsSearch(e.target.value)}
+              className="search-input"
+            />
           </div>
           <table className="bookings-table">
             <thead>
@@ -189,30 +227,36 @@ const Schedule = () => {
               </tr>
             </thead>
             <tbody>
-              {resultsSort.sortedData.map((r, i) => (
-                <tr key={i} className={r.shifted ? 'shifted-row' : ''}>
-                  <td>
-                    <span className={`priority-token priority-token--${r.priorityRank <= 3 ? 'high' : r.priorityRank <= 6 ? 'mid' : 'low'}`}>
-                      <span className="priority-token__rank">{r.priorityRank}</span>
-                      <span className="priority-token__label">PRIORITY</span>
-                    </span>
-                  </td>
-                  <td>#{r.bookingId}</td>
-                  <td>{r.examDate ? new Date(r.examDate).toLocaleDateString() : <span className="no-exam">None</span>}</td>
-                  <td>{r.failures}</td>
-                  <td>{r.lessonsCompleted}</td>
-                  <td>{r.preferredDate} ({getSlotTimeRange(r.preferredSlot)})</td>
-                  <td>{r.assignedDate} ({r.timeRange})</td>
-                  <td>
-                    {r.shifted ? (
-                      <span className="status-badge status-shifted">Shifted</span>
-                    ) : (
-                      <span className="status-badge status-exact">Exact Match</span>
-                    )}
-                  </td>
-                  <td>{r.instructorName}</td>
+              {resultsSort.sortedData.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="no-results">No results match your search</td>
                 </tr>
-              ))}
+              ) : (
+                resultsSort.sortedData.map((r, i) => (
+                  <tr key={i} className={r.shifted ? 'shifted-row' : ''}>
+                    <td>
+                      <span className={`priority-token priority-token--${r.priorityRank <= 3 ? 'high' : r.priorityRank <= 6 ? 'mid' : 'low'}`}>
+                        <span className="priority-token__rank">{r.priorityRank}</span>
+                        <span className="priority-token__label">PRIORITY</span>
+                      </span>
+                    </td>
+                    <td>#{r.bookingId}</td>
+                    <td>{r.examDate ? new Date(r.examDate).toLocaleDateString() : <span className="no-exam">None</span>}</td>
+                    <td>{r.failures}</td>
+                    <td>{r.lessonsCompleted}</td>
+                    <td>{r.preferredDate} ({getSlotTimeRange(r.preferredSlot)})</td>
+                    <td>{r.assignedDate} ({r.timeRange})</td>
+                    <td>
+                      {r.shifted ? (
+                        <span className="status-badge status-shifted">Shifted</span>
+                      ) : (
+                        <span className="status-badge status-exact">Exact Match</span>
+                      )}
+                    </td>
+                    <td>{r.instructorName}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -222,6 +266,13 @@ const Schedule = () => {
         <div className="pending-bookings card">
           <div className="results-header">
             <h3>Pending {VEHICLE_LABELS[activeType]} Bookings</h3>
+            <input
+              type="text"
+              placeholder="Search pending bookings..."
+              value={pendingSearch}
+              onChange={(e) => setPendingSearch(e.target.value)}
+              className="search-input"
+            />
           </div>
           <table className="bookings-table">
             <thead>
@@ -235,16 +286,22 @@ const Schedule = () => {
               </tr>
             </thead>
             <tbody>
-              {pendingByType.map((booking) => (
-                <tr key={booking.id}>
-                  <td>#{booking.id}</td>
-                  <td>{booking.preferredDate}</td>
-                  <td>{booking.examDate ? new Date(booking.examDate).toLocaleDateString() : <span className="no-exam">None</span>}</td>
-                  <td>{booking.preferredSlot} ({getSlotTimeRange(booking.preferredSlot)})</td>
-                  <td>{booking.experienceLevel}</td>
-                  <td>{booking.failures}</td>
+              {filteredPending.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="no-results">No bookings match your search</td>
                 </tr>
-              ))}
+              ) : (
+                filteredPending.map((booking) => (
+                  <tr key={booking.id}>
+                    <td>#{booking.id}</td>
+                    <td>{booking.preferredDate}</td>
+                    <td>{booking.examDate ? new Date(booking.examDate).toLocaleDateString() : <span className="no-exam">None</span>}</td>
+                    <td>{booking.preferredSlot} ({getSlotTimeRange(booking.preferredSlot)})</td>
+                    <td>{booking.experienceLevel}</td>
+                    <td>{booking.failures}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

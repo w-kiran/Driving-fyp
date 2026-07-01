@@ -11,7 +11,9 @@
   display: flex;
   flex-direction: column;
   position: fixed;
-  height: 100vh;
+  top: 0;
+  left: 0;
+  bottom: 0;
 }
 
 .sidebar-header {
@@ -41,6 +43,7 @@
 .sidebar-nav {
   flex: 1;
   padding: 16px 12px;
+  overflow-y: auto;
 
   .nav-item {
     display: flex;
@@ -154,4 +157,79 @@
 
 .content-body {
   padding: 32px;
+}
+
+// ─── Sidebar Toggle Button ───────────────────────────────────
+.sidebar-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  margin-right: 12px;
+
+  .hamburger-line {
+    width: 20px;
+    height: 2px;
+    background: $text-color;
+    border-radius: 2px;
+    transition: $transition;
+  }
+}
+
+// ─── Mobile Sidebar Overlay ───────────────────────────────────
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+}
+
+// ─── Responsive ──────────────────────────────────────────────
+@media (max-width: 768px) {
+  .sidebar-toggle {
+    display: flex;
+  }
+
+  .sidebar-overlay {
+    display: block;
+  }
+
+  .sidebar {
+    left: -$sidebar-width;
+    transition: left 0.3s ease;
+    z-index: 100;
+
+    &.open {
+      left: 0;
+    }
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .content-header {
+    padding: 16px;
+
+    .header-left {
+      display: flex;
+      align-items: center;
+    }
+
+    .page-title {
+      font-size: 18px;
+    }
+
+    .header-date {
+      font-size: 12px;
+    }
+  }
+
+  .content-body {
+    padding: 16px;
+  }
 }

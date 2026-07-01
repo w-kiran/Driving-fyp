@@ -344,6 +344,33 @@ input, select, textarea {
   }
 }
 
+@media (max-width: 768px) {
+  .vehicle-tabs {
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .vehicle-tab {
+    padding: 10px 12px;
+    gap: 6px;
+
+    &__icon { font-size: 18px; }
+    &__label { font-size: 13px; }
+    &__count, &__result-count { font-size: 10px; padding: 1px 6px; }
+  }
+}
+
+@media (max-width: 480px) {
+  .vehicle-tab {
+    flex-direction: column;
+    padding: 8px;
+    gap: 2px;
+
+    &__label { font-size: 11px; }
+    &__count, &__result-count { font-size: 9px; }
+  }
+}
+
 // ─── Priority Token (shared across Schedule & Lessons) ───────────────────
 .priority-token {
   display: inline-flex;

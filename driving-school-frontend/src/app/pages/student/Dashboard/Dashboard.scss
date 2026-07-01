@@ -216,11 +216,51 @@
 }
 
 @media (max-width: 768px) {
+  .student-dashboard {
+    .welcome-section {
+      h2 { font-size: 20px; }
+    }
+
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .stat-card {
+      padding: 14px;
+      gap: 12px;
+
+      .stat-icon { font-size: 24px; }
+      .stat-value { font-size: 22px; }
+      .stat-label { font-size: 12px; }
+    }
+
+    .upcoming-lesson-card .lesson-details {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .recent-bookings {
+      .bookings-table th,
+      .bookings-table td {
+        padding: 8px;
+        font-size: 13px;
+      }
+    }
+  }
+
+  .modal {
+    width: 95%;
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
   .student-dashboard .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
 
   .student-dashboard .upcoming-lesson-card .lesson-details {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
 }

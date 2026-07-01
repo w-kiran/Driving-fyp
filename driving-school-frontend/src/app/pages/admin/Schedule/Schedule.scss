@@ -80,7 +80,12 @@
   }
 
   .results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 16px;
+
+    h3 { margin-bottom: 0; }
 
     .results-subtitle {
       font-size: 13px;
@@ -117,5 +122,84 @@
     padding: 48px;
     h3 { margin-bottom: 8px; }
     p { color: $text-muted; }
+  }
+
+  .search-input {
+    padding: 8px 14px;
+    border: 1px solid $border-color;
+    border-radius: $border-radius;
+    font-size: 14px;
+    width: 260px;
+    transition: $transition;
+    background: $white;
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+      box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+    }
+
+    &::placeholder {
+      color: $text-muted;
+    }
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 24px;
+    color: $text-muted;
+    font-style: italic;
+  }
+}
+
+@media (max-width: 768px) {
+  .schedule-page {
+    .schedule-header {
+      flex-direction: column;
+      gap: 16px;
+      align-items: stretch;
+
+      .header-content {
+        h2 { font-size: 20px; }
+        .schedule-hint { font-size: 12px; }
+      }
+
+      .schedule-actions {
+        flex-direction: column;
+        gap: 8px;
+
+        .generate-btn, .cancel-schedule-btn {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    }
+
+    .schedule-stats {
+      gap: 12px;
+
+      .stat-card {
+        padding: 16px;
+        .stat-value { font-size: 28px; }
+      }
+    }
+
+    .results-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+
+      h3 { font-size: 16px; }
+    }
+
+    .search-input {
+      width: 100%;
+    }
+
+    .bookings-table th,
+    .bookings-table td {
+      padding: 8px;
+      font-size: 13px;
+    }
   }
 }

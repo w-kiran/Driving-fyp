@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchStudents, deleteStudent } from '@/store/slices/adminSlice'
+import { useDebounce } from '@/hooks/useDebounce'
 import { useServerSort } from '@/hooks/useServerSort'
 import SortableHeader from '@/components/SortableHeader/SortableHeader'
 import toast from 'react-hot-toast'
@@ -11,6 +12,7 @@ const Students = () => {
   const dispatch = useAppDispatch()
   const { students, loading } = useAppSelector((state: RootState) => state.admin)
   const [searchTerm, setSearchTerm] = useState('')
+  const debouncedSearch = useDebounce(searchTerm, 300)
 
   const fetchSortedStudents = useCallback(
     (sortBy: string, sortOrder: 'asc' | 'desc') => {
@@ -22,8 +24,8 @@ const Students = () => {
   const { sortConfig, requestSort } = useServerSort(fetchSortedStudents, 'id', 'desc')
 
   const displayedStudents = students?.filter((student) =>
-    student.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    student.user?.name?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+    student.user?.email?.toLowerCase().includes(debouncedSearch.toLowerCase())
   ) || []
 
   const handleDelete = async (id: number) => {
@@ -36,19 +38,25 @@ const Students = () => {
   return (
     <div className="students-page">
       <div className="page-header">
-        <h2>Students</h2>
-        <input
-          type="text"
-          placeholder="Search students..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-input"
-        />
+        <div className="page-header__top">
+          <h2>Students</h2>
+          <input
+            type="text"
+            placeholder="Search students..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+        </div>
       </div>
 
       {loading ? (
         <div className="loading-container">
           <div className="spinner" />
+        </div>
+      ) : (searchTerm && displayedStudents?.length === 0) ? (
+        <div className="empty-state card">
+          <h3>No students match your search</h3>
         </div>
       ) : displayedStudents?.length === 0 ? (
         <div className="empty-state card">

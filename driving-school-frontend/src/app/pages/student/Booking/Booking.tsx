@@ -113,12 +113,12 @@ const Booking = () => {
       dayName: string
       month: string
       dayNum: number
-      isToday: boolean
+      isTomorrow: boolean
     }> = []
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-    for (let i = 0; i <= 7; i++) {
+    for (let i = 1; i <= 7; i++) {
       const d = new Date(today)
       d.setDate(today.getDate() + i)
       const day = String(d.getDate()).padStart(2, '0')
@@ -131,7 +131,7 @@ const Booking = () => {
         dayName: dayNames[d.getDay()],
         month: monthNames[d.getMonth()],
         dayNum: d.getDate(),
-        isToday: i === 0,
+        isTomorrow: i === 1,
       })
     }
     return options
@@ -162,7 +162,7 @@ const Booking = () => {
                       <button
                         key={opt.dateStr}
                         type="button"
-                        className={`date-card ${isSelected ? 'selected' : ''} ${isFull ? 'full' : ''} ${opt.isToday ? 'today' : ''}`}
+                        className={`date-card ${isSelected ? 'selected' : ''} ${isFull ? 'full' : ''} ${opt.isTomorrow ? 'tomorrow' : ''}`}
                         disabled={isFull}
                         onClick={() => setFormData({ ...formData, preferredDate: opt.dateStr })}
                       >
@@ -174,7 +174,7 @@ const Booking = () => {
                             {countInfo.count}/{maxBookingsPerDay}
                           </span>
                         )}
-                        {opt.isToday && <span className="date-card-badge">Today</span>}
+                        {opt.isTomorrow && <span className="date-card-badge">Tomorrow</span>}
                       </button>
                     )
                   })}

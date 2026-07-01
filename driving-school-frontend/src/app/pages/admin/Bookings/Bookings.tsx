@@ -1,7 +1,8 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchBookings, updateBookingStatus, deleteBooking } from '@/store/slices/adminSlice'
+import { useDebounce } from '@/hooks/useDebounce'
 import { useServerSort } from '@/hooks/useServerSort'
 import SortableHeader from '@/components/SortableHeader/SortableHeader'
 import type { VehicleType } from '@/types'
@@ -17,6 +18,8 @@ const Bookings = () => {
   const { bookings, loading } = useAppSelector((state: RootState) => state.admin)
   const [filter, setFilter] = useState<'all' | 'PENDING' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED'>('all')
   const [activeType, setActiveType] = useState<VehicleType>('CAR')
+  const [searchTerm, setSearchTerm] = useState('')
+  const debouncedSearch = useDebounce(searchTerm, 300)
 
   const fetchSortedBookings = useCallback(
     (sortBy: string, sortOrder: 'asc' | 'desc') => {
@@ -30,7 +33,17 @@ const Bookings = () => {
   const filteredByStatus =
     filter === 'all' ? bookings : bookings?.filter((b) => b.status === filter)
 
-  const displayedBookings = filteredByStatus?.filter((b) => b.vehicleType === activeType)
+  const byVehicle = filteredByStatus?.filter((b) => b.vehicleType === activeType)
+
+  const displayedBookings = useMemo(() => {
+    if (!debouncedSearch) return byVehicle
+    const q = debouncedSearch.toLowerCase()
+    return byVehicle?.filter((b) =>
+      b.student?.user?.name?.toLowerCase().includes(q) ||
+      String(b.id).includes(q) ||
+      b.preferredDate?.includes(q)
+    )
+  }, [byVehicle, debouncedSearch])
 
   const handleUpdateStatus = async (bookingId: number, newStatus: 'PENDING' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED') => {
     try {
@@ -65,7 +78,16 @@ const Bookings = () => {
   return (
     <div className="bookings-page">
       <div className="page-header">
-        <h2>Bookings</h2>
+        <div className="page-header__top">
+          <h2>Bookings</h2>
+          <input
+            type="text"
+            placeholder="Search bookings..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+        </div>
         <div className="filter-tabs">
           {(['all', 'PENDING', 'SCHEDULED', 'COMPLETED', 'CANCELLED'] as const).map((f) => (
             <button
@@ -99,6 +121,10 @@ const Bookings = () => {
       {loading ? (
         <div className="loading-container">
           <div className="spinner" />
+        </div>
+      ) : (searchTerm && displayedBookings?.length === 0) ? (
+        <div className="empty-state card">
+          <h3>No bookings match your search</h3>
         </div>
       ) : displayedBookings?.length === 0 ? (
         <div className="empty-state card">

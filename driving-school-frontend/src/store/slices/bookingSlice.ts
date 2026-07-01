@@ -149,10 +149,12 @@ const bookingSlice = createSlice({
       })
       .addCase(fetchMyBookings.pending, (state) => {
         state.loading = true
+        state.error = null
       })
       .addCase(fetchMyBookings.fulfilled, (state, action: PayloadAction<Booking[]>) => {
         state.loading = false
         state.bookings = action.payload
+        state.error = null
       })
       .addCase(fetchMyBookings.rejected, (state, action) => {
         state.loading = false
@@ -160,10 +162,12 @@ const bookingSlice = createSlice({
       })
       .addCase(fetchMyLessons.pending, (state) => {
         state.loading = true
+        state.error = null
       })
       .addCase(fetchMyLessons.fulfilled, (state, action: PayloadAction<Lesson[]>) => {
         state.loading = false
         state.lessons = action.payload
+        state.error = null
       })
       .addCase(fetchMyLessons.rejected, (state, action) => {
         state.loading = false

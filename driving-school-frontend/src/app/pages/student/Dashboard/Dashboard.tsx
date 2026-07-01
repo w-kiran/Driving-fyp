@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { RootState } from '@/store'
 import { fetchMyBookings, fetchMyLessons, editBooking, deleteBooking } from '@/store/slices/bookingSlice'
@@ -191,9 +192,9 @@ const Dashboard = () => {
         <div className="empty-state card">
           <h3>No bookings yet</h3>
           <p>Book your first driving lesson to get started!</p>
-          <a href="/booking" className="btn btn-primary">
+          <Link to="/booking" className="btn btn-primary">
             Book Now
-          </a>
+          </Link>
         </div>
       )}
 
